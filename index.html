@@ -103,14 +103,14 @@
             border-radius: 8px;
             border: 2px dashed #f1c40f;
         }
-        .leaderboard h3 { margin-top: 0; color: #b7950b; text-align: center; font-size: 22px;}
+        .leaderboard h3 { margin-top: 0; color: #b7950b; text-align: center; font-size: 22px; margin-bottom: 10px;}
         .rank-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 15px;
+            font-size: 14px;
         }
         .rank-table th, .rank-table td {
-            padding: 8px;
+            padding: 6px 4px;
             text-align: center;
             border-bottom: 1px solid #f9e79f;
         }
@@ -130,6 +130,24 @@
         <button onclick="startGame('advanced')" class="btn-advance">進階練習 (不限時/3個數)</button>
         <hr style="border: 0; border-top: 1px dashed #bdc3c7; margin: 20px 0;">
         <button onclick="startGame('contest')" class="btn-contest" style="font-size: 20px; padding: 12px 25px;">⏱️ 1分鐘限時挑戰賽</button>
+
+        <div class="leaderboard">
+            <h3>🏆 頂尖對決：前 20 名排行榜</h3>
+            <table class="rank-table">
+                <thead>
+                    <tr>
+                        <th width="12%">名次</th>
+                        <th width="30%">名字</th>
+                        <th width="18%">答對</th>
+                        <th width="18%">正確率</th>
+                        <th width="22%">時間</th>
+                    </tr>
+                </thead>
+                <tbody id="home-leaderboard-body">
+                    <tr><td colspan="5">排行榜載入中...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div id="quiz-stage" class="hidden">
@@ -137,7 +155,7 @@
         
         <div class="scoreboard">
             <div>參賽學生: <span id="lbl-name">-</span></div>
-            <div>目前模式: <span id="lbl-mode" style="font-weight:bold; color:#2980b9;">-</span></div>
+            <div>目模式: <span id="lbl-mode" style="font-weight:bold; color:#2980b9;">-</span></div>
             <div>答對題數: <span id="lbl-correct" style="color:#27ae60; font-weight:bold;">0</span> 題</div>
             <div id="wrong-box-title">答錯題數: <span id="lbl-wrong">0</span> 題</div>
             <div style="grid-column: span 2; text-align: center; font-weight: bold;">
@@ -150,4 +168,361 @@
             <input type="number" id="user-answer" placeholder="請輸入答案" autocomplete="off">
             <br>
             <button id="btn-submit" onclick="checkAnswer()" class="btn-submit">送出答案 (Enter)</button>
-            <div class="feedback" id
+            <div class="feedback" id="feedback-text"></div>
+            <div class="hint hidden" id="space-hint">請按 【空白鍵 Space】 進入下一題</div>
+        </div>
+        <button onclick="exitGame()" class="btn-nav" style="margin-top:15px;">返回主選單</button>
+    </div>
+
+    <div id="result-stage" class="hidden">
+        <h1 style="color: #e74c3c;">⏱️ 時間到！挑戰結束</h1>
+        <div class="scoreboard" style="background-color: #eaecee; margin-top: 20px;">
+            <div style="grid-column: span 2; font-size: 20px; text-align: center; font-weight: bold; color: #2c3e50;">
+                你的最終戰績：答對 <span id="final-correct" style="color:#27ae60; font-size:26px;">0</span> 題
+            </div>
+            <div>嘗試總次數: <span id="final-total">0</span> 次</div>
+            <div>最終正確率: <span id="final-rate">0</span>%</div>
+        </div>
+        <button onclick="exitGame()" class="btn-basic">再挑戰一次 / 回主選單</button>
+
+        <div class="leaderboard">
+            <h3>🏆 頂尖對決：前 20 名排行榜</h3>
+            <table class="rank-table">
+                <thead>
+                    <tr>
+                        <th width="12%">名次</th>
+                        <th width="30%">名字</th>
+                        <th width="18%">答對</th>
+                        <th width="18%">正確率</th>
+                        <th width="22%">時間</th>
+                    </tr>
+                </thead>
+                <tbody id="result-leaderboard-body">
+                    <tr><td colspan="5">排行榜載入中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Firebase 金鑰配置 (已自動綁定)
+    const firebaseConfig = {
+        apiKey: "AIzaSyBVsWn1_ejMdHsqsYLkaDQHYXyraDeQD_U",
+        authDomain: "math-quiz-f0e5b.firebaseapp.com",
+        databaseURL: "https://math-quiz-f0e5b-default-rtdb.firebaseio.com",
+        projectId: "math-quiz-f0e5b",
+        storageBucket: "math-quiz-f0e5b.firebasestorage.app",
+        messagingSenderId: "657003713715",
+        appId: "1:657003713715:web:122ea4c0653d15753d4cc6"
+    };
+    
+    // 初始化 Firebase
+    let database = null;
+    if (typeof firebase !== 'undefined') {
+        firebase.initializeApp(firebaseConfig);
+        database = firebase.database();
+    }
+
+    // 遊戲核心變數
+    let currentData = { name: '', mode: 'basic', total: 0, correct: 0, wrong: 0 };
+    let currentAnswer = 0;
+    let isWaitingForNext = false; 
+    let timeLeft = 60;
+    let timerInterval = null;
+
+    // 網頁初始化完畢，立刻載入首頁排行榜
+    window.onload = function() {
+        loadLeaderboardData('home-leaderboard-body');
+    };
+
+    // 啟動遊戲 
+    function startGame(mode) {
+        const nameInput = document.getElementById('username').value.trim();
+        if (!nameInput) {
+            alert('請先輸入名字喔！');
+            return;
+        }
+        
+        currentData.name = nameInput;
+        currentData.mode = mode;
+        currentData.total = 0;
+        currentData.correct = 0;
+        currentData.wrong = 0;
+        isWaitingForNext = false;
+
+        document.getElementById('lbl-name').innerText = currentData.name;
+        let modeTitle = '基礎練習';
+        if(mode === 'advanced') modeTitle = '進階練習';
+        if(mode === 'contest') modeTitle = '⏱️ 1分鐘競賽';
+        document.getElementById('lbl-mode').innerText = modeTitle;
+
+        if (mode === 'contest') {
+            document.getElementById('timer-wrapper').classList.remove('hidden');
+            document.getElementById('wrong-box-title').innerHTML = `嘗試次數: <span id="lbl-wrong">0</span> 次`;
+            timeLeft = 60;
+            document.getElementById('timer-sec').innerText = timeLeft;
+        } else {
+            document.getElementById('timer-wrapper').classList.add('hidden');
+            document.getElementById('wrong-box-title').innerHTML = `答錯題數: <span id="lbl-wrong">0</span> 題`;
+        }
+
+        updateScoreboard();
+        
+        document.getElementById('login-stage').classList.add('hidden');
+        document.getElementById('result-stage').classList.add('hidden');
+        document.getElementById('quiz-stage').classList.remove('hidden');
+        
+        generateQuestion();
+
+        if (mode === 'contest') {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer-sec').innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    endContest();
+                }
+            }, 1000);
+        }
+    }
+
+    function getRandomNumWithoutZero() {
+        let num = 0;
+        while (num === 0) { num = Math.floor(Math.random() * 21) - 10; }
+        return num;
+    }
+    
+    function getRandomOp() { return Math.random() < 0.5 ? '+' : '-'; }
+    function formatNum(num) { return num < 0 ? `(${num})` : num; }
+
+    function generateQuestion() {
+        isWaitingForNext = false;
+        document.getElementById('feedback-text').className = 'feedback';
+        document.getElementById('feedback-text').innerText = '';
+        document.getElementById('space-hint').classList.add('hidden');
+        
+        const ansInput = document.getElementById('user-answer');
+        ansInput.value = '';
+        ansInput.disabled = false;
+        ansInput.focus();
+        document.getElementById('btn-submit').disabled = false;
+
+        let qText = '';
+        if (currentData.mode === 'basic' || currentData.mode === 'contest') {
+            let n1 = getRandomNumWithoutZero();
+            let n2 = getRandomNumWithoutZero();
+            let op = getRandomOp();
+            qText = `${formatNum(n1)} ${op} ${formatNum(n2)} = ?`;
+            currentAnswer = op === '+' ? n1 + n2 : n1 - n2;
+        } 
+        else if (currentData.mode === 'advanced') {
+            let n1 = getRandomNumWithoutZero();
+            let n2 = getRandomNumWithoutZero();
+            let n3 = getRandomNumWithoutZero();
+            let op1 = getRandomOp();
+            let op2 = getRandomOp();
+            qText = `${formatNum(n1)} ${op1} ${formatNum(n2)} ${op2} ${formatNum(n3)} = ?`;
+            let temp = op1 === '+' ? n1 + n2 : n1 - n2;
+            currentAnswer = op2 === '+' ? temp + n3 : temp - n3;
+        }
+
+        document.getElementById('question-text').innerText = qText;
+    }
+
+    function checkAnswer() {
+        if (currentData.mode !== 'contest' && isWaitingForNext) return;
+
+        const userInput = document.getElementById('user-answer').value;
+        if (userInput === '') {
+            alert('請輸入答案！');
+            return;
+        }
+
+        const userAnswer = parseInt(userInput, 10);
+        currentData.total++;
+
+        const feedbackEl = document.getElementById('feedback-text');
+        const ansInput = document.getElementById('user-answer');
+
+        if (currentData.mode === 'contest') {
+            if (userAnswer === currentAnswer) {
+                currentData.correct++;
+                feedbackEl.innerText = '⭕ 答對了！';
+                feedbackEl.className = 'feedback correct';
+                setTimeout(() => { if (timeLeft > 0) generateQuestion(); }, 100);
+            } else {
+                feedbackEl.innerText = '❌ 算錯囉，再試一次！';
+                feedbackEl.className = 'feedback wrong';
+                ansInput.value = '';
+                ansInput.focus();
+            }
+        } 
+        else {
+            ansInput.disabled = true;
+            document.getElementById('btn-submit').disabled = true;
+
+            if (userAnswer === currentAnswer) {
+                currentData.correct++;
+                feedbackEl.innerText = '⭕ 太棒了！答對了！';
+                feedbackEl.className = 'feedback correct';
+                savePracticeData(); 
+                
+                isWaitingForNext = true;
+                setTimeout(() => { if(isWaitingForNext) generateQuestion(); }, 2000);
+            } else {
+                currentData.wrong++;
+                feedbackEl.innerText = `❌ 答錯囉！正確答案是：${currentAnswer}`;
+                feedbackEl.className = 'feedback wrong';
+                document.getElementById('space-hint').classList.remove('hidden');
+                savePracticeData(); 
+                
+                isWaitingForNext = true;
+            }
+        }
+
+        updateScoreboard();
+    }
+
+    function updateScoreboard() {
+        document.getElementById('lbl-correct').innerText = currentData.correct;
+        document.getElementById('lbl-total').innerText = currentData.total;
+        
+        if (currentData.mode === 'contest') {
+            document.getElementById('lbl-wrong').innerText = currentData.total; 
+        } else {
+            document.getElementById('lbl-wrong').innerText = currentData.wrong; 
+        }
+        
+        let rate = currentData.total === 0 ? 0 : Math.round((currentData.correct / currentData.total) * 100);
+        document.getElementById('lbl-rate').innerText = rate;
+    }
+
+    function endContest() {
+        clearInterval(timerInterval);
+        document.getElementById('user-answer').blur();
+        document.getElementById('quiz-stage').classList.add('hidden');
+        document.getElementById('result-stage').classList.remove('hidden');
+
+        document.getElementById('final-correct').innerText = currentData.correct;
+        document.getElementById('final-total').innerText = currentData.total;
+        let rate = currentData.total === 0 ? 0 : Math.round((currentData.correct / currentData.total) * 100);
+        document.getElementById('final-rate').innerText = rate;
+
+        saveContestDataAndLoadLeaderboard();
+    }
+
+    document.addEventListener('keydown', function(event) {
+        if (document.getElementById('quiz-stage').classList.contains('hidden')) return;
+
+        if (event.key === 'Enter') {
+            if (currentData.mode === 'contest' || !isWaitingForNext) { checkAnswer(); }
+        } else if (event.key === ' ' || event.code === 'Space') {
+            if (currentData.mode !== 'contest' && isWaitingForNext) {
+                event.preventDefault();
+                generateQuestion();
+            }
+        }
+    });
+
+    function exitGame() {
+        clearInterval(timerInterval);
+        document.getElementById('quiz-stage').classList.add('hidden');
+        document.getElementById('result-stage').classList.add('hidden');
+        document.getElementById('login-stage').classList.remove('hidden');
+        document.getElementById('username').value = '';
+        
+        // 返回主選單時，再次更新首頁排行榜最新戰況
+        loadLeaderboardData('home-leaderboard-body');
+    }
+
+    function savePracticeData() {
+        if (!database) return;
+        let rate = Math.round((currentData.correct / currentData.total) * 100);
+        let modeText = currentData.mode === 'basic' ? '基礎' : '進階';
+        
+        database.ref('quiz_records/' + currentData.name + '/' + modeText).set({
+            name: currentData.name,
+            mode: modeText,
+            total: currentData.total,
+            correct: currentData.correct,
+            wrong: currentData.wrong,
+            rate: rate + '%',
+            lastUpdate: new Date().toLocaleString()
+        });
+    }
+
+    // 核心數據加載與精準排序邏輯
+    function loadLeaderboardData(elementId) {
+        if (!database) return;
+        database.ref('contest_records').once('value', (snapshot) => {
+            let allRecords = [];
+            snapshot.forEach((childSnapshot) => {
+                let data = childSnapshot.val();
+                
+                // 動態防呆計算正確率（舊數據若無欄位也能相容）
+                let totalAns = data.total || data.correct || 1;
+                let calculatedRate = Math.round((data.correct / totalAns) * 100);
+                
+                allRecords.push({
+                    name: data.name,
+                    correct: data.correct,
+                    total: totalAns,
+                    rate: calculatedRate,
+                    time: data.time || ''
+                });
+            });
+
+            // 【排序邏輯】優先比答對題數(降序) -> 再比正確率(降序) -> 再比總次數(升序)
+            allRecords.sort((a, b) => {
+                if (b.correct !== a.correct) return b.correct - a.correct;
+                if (b.rate !== a.rate) return b.rate - a.rate;
+                return a.total - b.total;
+            });
+
+            const tbody = document.getElementById(elementId);
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (allRecords.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5">目前尚無競賽紀錄</td></tr>`;
+                return;
+            }
+
+            allRecords.slice(0, 20).forEach((record, index) => {
+                let rowClass = index === 0 ? 'class="top1"' : '';
+                let shortTime = record.time.replace(/^\d{4}\//, ""); 
+
+                tbody.innerHTML += `
+                    <tr ${rowClass}>
+                        <td>${index + 1}</td>
+                        <td>${record.name}</td>
+                        <td style="font-weight:bold; color:#e74c3c;">${record.correct} 題</td>
+                        <td style="font-weight:bold; color:#2980b9;">${record.rate}%</td>
+                        <td style="font-size:11px; color:#7f8c8d;">${shortTime}</td>
+                    </tr>
+                `;
+            });
+        });
+    }
+
+    function saveContestDataAndLoadLeaderboard() {
+        if (!database) return;
+        const timestamp = new Date().getTime();
+        const nowString = new Date().toLocaleString('zh-TW', { hour12: false });
+
+        database.ref('contest_records/' + timestamp).set({
+            name: currentData.name,
+            correct: currentData.correct,
+            total: currentData.total,
+            time: nowString
+        }).then(() => {
+            // 資料儲存成功，立即刷新結算畫面排行榜
+            loadLeaderboardData('result-leaderboard-body');
+        });
+    }
+</script>
+
+</body>
+</html>
