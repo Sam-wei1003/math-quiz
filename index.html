@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>正負數加減法綜合練習場</title>
     
-    <!-- 確保 Firebase SDK 最先載入 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -27,7 +26,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             text-align: center;
             width: 100%;
-            max-width: 580px; /* 稍微加寬以容納打卡牆 */
+            max-width: 580px;
         }
         h1 { color: #2c3e50; margin-bottom: 5px; }
         h2 { color: #e67e22; margin-top: 5px; font-size: 20px; }
@@ -158,7 +157,6 @@
         }
         .top1 { font-weight: bold; color: #d4ac0d; background-color: #fef9e7; }
 
-        /* 🟢 簽到打卡小燈泡核心樣式 */
         .dot-container {
             display: inline-flex;
             gap: 3px;
@@ -171,14 +169,13 @@
             height: 12px;
             border-radius: 50%;
             display: inline-block;
-            background-color: #e0e0e0; /* 未簽到灰色 */
+            background-color: #e0e0e0;
             position: relative;
             cursor: help;
         }
         .dot.active {
-            background-color: #2ecc71; /* 已簽到綠色 */
+            background-color: #2ecc71;
         }
-        /* 懸浮顯示當天題數說明 */
         .dot::after {
             content: attr(data-tip);
             position: absolute;
@@ -199,12 +196,18 @@
         .dot:hover::after {
             opacity: 1;
         }
+        
+        .count-badge {
+            font-size: 11px;
+            color: #888;
+            font-weight: normal;
+            margin-left: 4px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- 階段一：主選單入口 -->
     <div id="login-stage">
         <h1>正負數加減法練習</h1>
         <h2>請輸入名字並選擇模式：</h2>
@@ -215,7 +218,6 @@
         <hr style="border: 0; border-top: 1px dashed #bdc3c7; margin: 20px 0;">
         <button onclick="startGame('contest')" class="btn-contest" style="font-size: 20px; padding: 12px 25px;">⏱️ 1分鐘限時挑戰賽</button>
 
-        <!-- 選關畫面下方的排行榜 -->
         <div class="leaderboard">
             <div class="tab-container">
                 <button id="tab-home-week" class="tab-btn active" onclick="switchTab('home', 'week')">🔥 本週勤奮榜 (看天數)</button>
@@ -227,11 +229,11 @@
                 <table class="rank-table">
                     <thead>
                         <tr>
-                            <th width="10%">名次</th>
-                            <th width="22%">名字</th>
-                            <th width="42%" id="th-header-type">近7日打卡跡象 (右為今天)</th>
-                            <th width="13%">答對</th>
-                            <th width="13%">正確率</th>
+                            <th width="10%" id="th-home-rank">名次</th>
+                            <th width="28%" id="th-home-name">名字</th>
+                            <th width="36%" id="th-header-type">近7日打卡跡象 (右為今天)</th>
+                            <th width="13%" id="th-home-score">答對</th>
+                            <th width="13%" id="th-home-rate">正確率</th>
                         </tr>
                     </thead>
                     <tbody id="home-leaderboard-body">
@@ -242,7 +244,6 @@
         </div>
     </div>
 
-    <!-- 階段二：進行作答 -->
     <div id="quiz-stage" class="hidden">
         <div id="timer-wrapper" class="timer-box hidden">剩餘時間：<span id="timer-sec">60</span> 秒</div>
         
@@ -267,7 +268,6 @@
         <button onclick="exitGame()" class="btn-nav" style="margin-top:15px;">返回主選單</button>
     </div>
 
-    <!-- 階段三：競賽結束結算頁 -->
     <div id="result-stage" class="hidden">
         <h1 style="color: #e74c3c;">⏱️ 時間到！挑戰結束</h1>
         <div class="scoreboard" style="background-color: #eaecee; margin-top: 20px;">
@@ -281,7 +281,6 @@
         <button onclick="restartGame()" class="btn-again">🔥 再挑戰一次 (名字免重打)</button>
         <button onclick="exitGame()" class="btn-nav">🏠 返回主選單</button>
 
-        <!-- 結束畫面排行榜 -->
         <div class="leaderboard">
             <div class="tab-container">
                 <button id="tab-result-week" class="tab-btn active" onclick="switchTab('result', 'week')">🔥 本週勤奮榜</button>
@@ -293,11 +292,11 @@
                 <table class="rank-table">
                     <thead>
                         <tr>
-                            <th width="10%">名次</th>
-                            <th width="22%">名字</th>
-                            <th width="42%" id="th-result-header-type">近7日打卡跡象</th>
-                            <th width="13%">答對</th>
-                            <th width="13%">正確率</th>
+                            <th width="10%" id="th-result-rank">名次</th>
+                            <th width="28%" id="th-result-name">名字</th>
+                            <th width="36%" id="th-result-header-type">近7日打卡跡象</th>
+                            <th width="13%" id="th-result-score">答對</th>
+                            <th width="13%" id="th-result-rate">正確率</th>
                         </tr>
                     </thead>
                     <tbody id="result-leaderboard-body">
@@ -338,6 +337,7 @@
         loadLeaderboardData('home-leaderboard-body', 'week');
     };
 
+    // 切換分頁時，動態顯示/隱藏「正確率」欄位
     function switchTab(stage, type) {
         currentTabs[stage] = type;
         document.getElementById(`tab-${stage}-week`).classList.remove('active');
@@ -345,11 +345,29 @@
         document.getElementById(`tab-${stage}-history`).classList.remove('active');
         document.getElementById(`tab-${stage}-${type}`).classList.add('active');
         
-        // 動態修改表頭文字
-        const thEl = document.getElementById(stage === 'home' ? 'th-header-type' : 'th-result-header-type');
-        if (type === 'week') thEl.innerText = "近7日打卡跡象 (右為今天)";
-        else if (type === 'today') thEl.innerText = "本次挑戰詳細時分秒";
-        else thEl.innerText = "歷史挑戰日期紀錄";
+        const nameTh = document.getElementById(stage === 'home' ? 'th-home-name' : 'th-result-name');
+        const centerTh = document.getElementById(stage === 'home' ? 'th-header-type' : 'th-result-header-type');
+        const scoreTh = document.getElementById(stage === 'home' ? 'th-home-score' : 'th-result-score');
+        const rateTh = document.getElementById(stage === 'home' ? 'th-home-rate' : 'th-result-rate');
+
+        if (type === 'week') {
+            centerTh.innerText = "近7日打卡跡象 (右為今天)";
+            rateTh.style.display = 'none'; // 隱藏正確率欄位
+            
+            // 重新分配剩餘欄位的寬度比例
+            nameTh.style.width = "33%";
+            centerTh.style.width = "42%";
+            scoreTh.style.width = "15%";
+        } else {
+            if (type === 'today') centerTh.innerText = "本次挑戰詳細時分秒";
+            else centerTh.innerText = "歷史挑戰日期紀錄";
+            rateTh.style.display = ''; // 顯示正確率欄位
+            
+            // 還原原本含正確率欄位的寬度比例
+            nameTh.style.width = "28%";
+            centerTh.style.width = "36%";
+            scoreTh.style.width = "13%";
+        }
 
         loadLeaderboardData(`${stage}-leaderboard-body`, type);
     }
@@ -537,7 +555,6 @@
         });
     }
 
-    // 獲取最近 7 天的日期陣列字串 ["2026/7/8", ..., "2026/7/14"]
     function getPast7Days() {
         let dates = [];
         for (let i = 6; i >= 0; i--) {
@@ -548,14 +565,12 @@
         return dates;
     }
 
-    // 【核心改版】載入與計算三大排行榜與打卡牆
     function loadLeaderboardData(elementId, filterType) {
         if (!database) return;
         database.ref('contest_records').once('value', (snapshot) => {
             const todayStr = new Date().toLocaleDateString('zh-TW');
             const past7Days = getPast7Days();
             
-            // 用以整合「每個學生」的多筆分散數據
             let studentMap = {};
 
             snapshot.forEach((childSnapshot) => {
@@ -566,19 +581,21 @@
                 let timeStr = data.time || '';
                 let datePart = timeStr.split(' ')[0] || '';
 
-                // 如果完全沒有初始化過這個學生，建立初始結構
                 if (!studentMap[name]) {
                     studentMap[name] = {
                         name: name,
                         historyMaxCorrect: 0, totalAnsOfMax: 0, maxRate: 0, maxTime: '',
+                        historyTotalCount: 0,
                         todayMaxCorrect: 0, todayTotalAns: 0, todayRate: 0, todayTime: '',
-                        weekActiveDays: 0, weekTotalCorrect: 0, weekTotalTotal: 0,
-                        dayRecords: {} // 用來記錄每一天分別對了幾題，格式 {"2026/7/14": 15}
+                        todayCount: 0,
+                        weekActiveDays: 0, weekTotalCorrect: 0,
+                        dayRecords: {}
                     };
-                    past7Days.forEach(d => studentMap[name].dayRecords[d] = 0);
+                    past7Days.forEach(d => studentMap[name].dayRecords[d] = { correct: 0, total: 0 });
                 }
 
                 let s = studentMap[name];
+                s.historyTotalCount++;
 
                 // 1. 歷史最佳紀錄統計
                 if (correct > s.historyMaxCorrect || (correct === s.historyMaxCorrect && (correct/total) > (s.historyMaxCorrect/s.totalAnsOfMax))) {
@@ -588,8 +605,9 @@
                     s.maxTime = timeStr;
                 }
 
-                // 2. 今日最佳紀錄統計
+                // 2. 今日數據統計
                 if (timeStr.startsWith(todayStr)) {
+                    s.todayCount++;
                     if (correct > s.todayMaxCorrect) {
                         s.todayMaxCorrect = correct;
                         s.todayTotalAns = total;
@@ -600,25 +618,23 @@
 
                 // 3. 近 7 日打卡累加
                 if (s.dayRecords[datePart] !== undefined) {
-                    s.dayRecords[datePart] += correct;
+                    s.dayRecords[datePart].correct += correct;
+                    s.dayRecords[datePart].total += total;
                 }
             });
 
-            // 整理成陣列，並計算勤奮度
             let allStudents = Object.values(studentMap);
             allStudents.forEach(s => {
                 let activeDays = 0;
-                past7Days.forEach(d => { if (s.dayRecords[d] > 0) activeDays++; });
+                past7Days.forEach(d => { if (s.dayRecords[d].correct > 0) activeDays++; });
                 s.weekActiveDays = activeDays;
             });
 
-            // 根據頁籤進行不同的分流與排序
             let displayList = [];
             if (filterType === 'week') {
-                // 【本週勤奮榜排序】：打卡天數多(降序) -> 7天累積總題數多(降序)
                 allStudents.forEach(s => {
                     let total7DaysCorrect = 0;
-                    past7Days.forEach(d => total7DaysCorrect += s.dayRecords[d]);
+                    past7Days.forEach(d => total7DaysCorrect += s.dayRecords[d].correct);
                     s.weekTotalCorrect = total7DaysCorrect;
                 });
                 displayList = allStudents.filter(s => s.weekActiveDays > 0);
@@ -628,12 +644,10 @@
                 });
             } 
             else if (filterType === 'today') {
-                // 【今日榜排序】
                 displayList = allStudents.filter(s => s.todayMaxCorrect > 0);
                 displayList.sort((a, b) => b.todayMaxCorrect - a.todayMaxCorrect);
             } 
             else {
-                // 【歷史榜排序】
                 displayList = [...allStudents];
                 displayList.sort((a, b) => b.historyMaxCorrect - a.historyMaxCorrect);
             }
@@ -642,8 +656,10 @@
             if (!tbody) return;
             tbody.innerHTML = '';
 
+            // 根據是否是週排行(week)動態調整無紀錄時的 colspan 數量
+            const currentColspan = filterType === 'week' ? 4 : 5;
             if (displayList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5">目前尚無相關紀錄</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="${currentColspan}">目前尚無相關紀錄</td></tr>`;
                 return;
             }
 
@@ -651,18 +667,29 @@
             displayList.slice(0, limit).forEach((record, index) => {
                 let rowClass = index === 0 ? 'class="top1"' : '';
                 
-                let centerTdContent = ''; // 中間主要欄位內容
+                let displayName = record.name;
+                let centerTdContent = ''; 
                 let scoreText = '';
-                let rateText = '';
+                let rateTdHtml = ''; // 動態存放正確率 TD 的 HTML
+
+                if (filterType === 'today') {
+                    displayName += `<span class="count-badge">(今練 ${record.todayCount} 次)</span>`;
+                } else if (filterType === 'history') {
+                    displayName += `<span class="count-badge">(累計 ${record.historyTotalCount} 次)</span>`;
+                }
 
                 if (filterType === 'week') {
-                    // 生成 7 個簽到燈泡
+                    // 生成打卡圓點（綠色），帶有每日答題數及正確率的懸浮提示
                     let dotsHtml = '<div class="dot-container">';
                     past7Days.forEach(d => {
-                        let score = record.dayRecords[d];
-                        let shortDate = d.substring(d.indexOf('/') + 1); // 簡化成 7/14 格式
+                        let dayData = record.dayRecords[d];
+                        let score = dayData.correct;
+                        let total = dayData.total;
+                        let shortDate = d.substring(d.indexOf('/') + 1);
+                        
                         if (score > 0) {
-                            dotsHtml += `<span class="dot active" data-tip="${shortDate}: 答對 ${score} 題"></span>`;
+                            let dayRate = total === 0 ? 0 : Math.round((score / total) * 100);
+                            dotsHtml += `<span class="dot active" data-tip="${shortDate}: 答對 ${score} 題 (正確率 ${dayRate}%)"></span>`;
                         } else {
                             dotsHtml += `<span class="dot" data-tip="${shortDate}: 未練習"></span>`;
                         }
@@ -670,27 +697,27 @@
                     dotsHtml += '</div>';
                     centerTdContent = dotsHtml + ` <span style="font-size:11px;color:#7f8c8d;">(${record.weekActiveDays}天)</span>`;
                     scoreText = `${record.weekTotalCorrect} 題`;
-                    rateText = `-`;
+                    rateTdHtml = ''; // 週勤奮榜時不渲染第5個正確率單元格
                 } 
                 else if (filterType === 'today') {
                     centerTdContent = `<span style="font-size:12px;color:#7f8c8d;">${record.todayTime}</span>`;
                     scoreText = `${record.todayMaxCorrect} 題`;
-                    rateText = `${record.todayRate}%`;
+                    rateTdHtml = `<td style="font-weight:bold; color:#2980b9;">${record.todayRate}%</td>`;
                 } 
                 else {
                     let shortTime = record.maxTime.replace(/^\d{4}\//, ""); 
                     centerTdContent = `<span style="font-size:12px;color:#7f8c8d;">${shortTime}</span>`;
                     scoreText = `${record.historyMaxCorrect} 題`;
-                    rateText = `${record.maxRate}%`;
+                    rateTdHtml = `<td style="font-weight:bold; color:#2980b9;">${record.maxRate}%</td>`;
                 }
 
                 tbody.innerHTML += `
                     <tr ${rowClass}>
                         <td>${index + 1}</td>
-                        <td style="font-weight:bold;">${record.name}</td>
+                        <td style="font-weight:bold; text-align:left; padding-left:8px;">${displayName}</td>
                         <td>${centerTdContent}</td>
                         <td style="font-weight:bold; color:#e74c3c;">${scoreText}</td>
-                        <td style="font-weight:bold; color:#2980b9;">${rateText}</td>
+                        ${rateTdHtml}
                     </tr>
                 `;
             });
