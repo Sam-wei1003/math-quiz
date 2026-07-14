@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>正負數加減法綜合練習場</title>
     
+    <!-- 確保 Firebase SDK 最先載入 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -26,7 +27,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             text-align: center;
             width: 100%;
-            max-width: 500px;
+            max-width: 580px; /* 稍微加寬以容納打卡牆 */
         }
         h1 { color: #2c3e50; margin-bottom: 5px; }
         h2 { color: #e67e22; margin-top: 5px; font-size: 20px; }
@@ -42,7 +43,6 @@
             text-align: center;
         }
         
-        /* 按鈕樣式 */
         button {
             font-size: 18px;
             padding: 10px 20px;
@@ -66,7 +66,6 @@
         .btn-again { background-color: #27ae60; font-weight: bold; }
         .btn-again:hover { background-color: #219653; }
         
-        /* 倒數計時器 */
         .timer-box {
             font-size: 26px;
             font-weight: bold;
@@ -101,14 +100,38 @@
             margin-top: 25px;
             text-align: left;
             background-color: #fcf3cf;
-            padding: 20px;
+            padding: 15px;
             border-radius: 8px;
             border: 2px dashed #f1c40f;
         }
-        .leaderboard h3 { margin-top: 0; color: #b7950b; text-align: center; font-size: 22px; margin-bottom: 10px;}
+        
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 12px;
+            gap: 5px;
+        }
+        .tab-btn {
+            flex: 1;
+            font-size: 14px;
+            padding: 8px 2px;
+            background-color: #f9e79f;
+            color: #7d6608;
+            border: 1px solid #f1c40f;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+            margin: 0;
+        }
+        .tab-btn.active {
+            background-color: #e67e22;
+            color: white;
+            border-color: #d35400;
+        }
         
         .leaderboard-scroll {
-            max-height: 350px; 
+            max-height: 380px; 
             overflow-y: auto;  
             border-radius: 6px;
             background-color: #fffdf5;
@@ -119,7 +142,7 @@
         .rank-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 14px;
+            font-size: 13px;
         }
         .rank-table th {
             position: sticky;
@@ -129,16 +152,59 @@
             z-index: 10;
         }
         .rank-table th, .rank-table td {
-            padding: 8px 4px;
+            padding: 8px 3px;
             text-align: center;
             border-bottom: 1px solid #f9e79f;
         }
         .top1 { font-weight: bold; color: #d4ac0d; background-color: #fef9e7; }
+
+        /* 🟢 簽到打卡小燈泡核心樣式 */
+        .dot-container {
+            display: inline-flex;
+            gap: 3px;
+            justify-content: center;
+            align-items: center;
+            vertical-align: middle;
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            background-color: #e0e0e0; /* 未簽到灰色 */
+            position: relative;
+            cursor: help;
+        }
+        .dot.active {
+            background-color: #2ecc71; /* 已簽到綠色 */
+        }
+        /* 懸浮顯示當天題數說明 */
+        .dot::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 4px 6px;
+            font-size: 10px;
+            border-radius: 4px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.1s;
+            z-index: 99;
+        }
+        .dot:hover::after {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <!-- 階段一：主選單入口 -->
     <div id="login-stage">
         <h1>正負數加減法練習</h1>
         <h2>請輸入名字並選擇模式：</h2>
@@ -149,17 +215,23 @@
         <hr style="border: 0; border-top: 1px dashed #bdc3c7; margin: 20px 0;">
         <button onclick="startGame('contest')" class="btn-contest" style="font-size: 20px; padding: 12px 25px;">⏱️ 1分鐘限時挑戰賽</button>
 
+        <!-- 選關畫面下方的排行榜 -->
         <div class="leaderboard">
-            <h3>🏆 頂尖對決：前 500 名排行榜</h3>
+            <div class="tab-container">
+                <button id="tab-home-week" class="tab-btn active" onclick="switchTab('home', 'week')">🔥 本週勤奮榜 (看天數)</button>
+                <button id="tab-home-today" class="tab-btn" onclick="switchTab('home', 'today')">📅 今日即時榜</button>
+                <button id="tab-home-history" class="tab-btn" onclick="switchTab('home', 'history')">📜 歷史總排行</button>
+            </div>
+            
             <div class="leaderboard-scroll">
                 <table class="rank-table">
                     <thead>
                         <tr>
-                            <th width="12%">名次</th>
-                            <th width="30%">名字</th>
-                            <th width="18%">答對</th>
-                            <th width="18%">正確率</th>
-                            <th width="22%">時間</th>
+                            <th width="10%">名次</th>
+                            <th width="22%">名字</th>
+                            <th width="42%" id="th-header-type">近7日打卡跡象 (右為今天)</th>
+                            <th width="13%">答對</th>
+                            <th width="13%">正確率</th>
                         </tr>
                     </thead>
                     <tbody id="home-leaderboard-body">
@@ -170,6 +242,7 @@
         </div>
     </div>
 
+    <!-- 階段二：進行作答 -->
     <div id="quiz-stage" class="hidden">
         <div id="timer-wrapper" class="timer-box hidden">剩餘時間：<span id="timer-sec">60</span> 秒</div>
         
@@ -194,6 +267,7 @@
         <button onclick="exitGame()" class="btn-nav" style="margin-top:15px;">返回主選單</button>
     </div>
 
+    <!-- 階段三：競賽結束結算頁 -->
     <div id="result-stage" class="hidden">
         <h1 style="color: #e74c3c;">⏱️ 時間到！挑戰結束</h1>
         <div class="scoreboard" style="background-color: #eaecee; margin-top: 20px;">
@@ -204,20 +278,26 @@
             <div>最終正確率: <span id="final-rate">0</span>%</div>
         </div>
         
-        <button onclick="restartGame()" class="btn-again">🔥 再挑戰一次 </button>
+        <button onclick="restartGame()" class="btn-again">🔥 再挑戰一次 (名字免重打)</button>
         <button onclick="exitGame()" class="btn-nav">🏠 返回主選單</button>
 
+        <!-- 結束畫面排行榜 -->
         <div class="leaderboard">
-            <h3>🏆 頂尖對決：前 500 名排行榜</h3>
+            <div class="tab-container">
+                <button id="tab-result-week" class="tab-btn active" onclick="switchTab('result', 'week')">🔥 本週勤奮榜</button>
+                <button id="tab-result-today" class="tab-btn" onclick="switchTab('result', 'today')">📅 今日即時榜</button>
+                <button id="tab-result-history" class="tab-btn" onclick="switchTab('result', 'history')">📜 歷史總排行</button>
+            </div>
+
             <div class="leaderboard-scroll">
                 <table class="rank-table">
                     <thead>
                         <tr>
-                            <th width="12%">名次</th>
-                            <th width="30%">名字</th>
-                            <th width="18%">答對</th>
-                            <th width="18%">正確率</th>
-                            <th width="22%">時間</th>
+                            <th width="10%">名次</th>
+                            <th width="22%">名字</th>
+                            <th width="42%" id="th-result-header-type">近7日打卡跡象</th>
+                            <th width="13%">答對</th>
+                            <th width="13%">正確率</th>
                         </tr>
                     </thead>
                     <tbody id="result-leaderboard-body">
@@ -241,47 +321,52 @@
         appId: "1:657003713715:web:122ea4c0653d15753d4cc6"
     };
     
-    // 初始化 Firebase
     let database = null;
     if (typeof firebase !== 'undefined') {
         firebase.initializeApp(firebaseConfig);
         database = firebase.database();
     }
 
-    // 遊戲核心變數
     let currentData = { name: '', mode: 'basic', total: 0, correct: 0, wrong: 0 };
     let currentAnswer = 0;
     let isWaitingForNext = false; 
     let timeLeft = 60;
     let timerInterval = null;
+    let currentTabs = { home: 'week', result: 'week' };
 
     window.onload = function() {
-        loadLeaderboardData('home-leaderboard-body');
+        loadLeaderboardData('home-leaderboard-body', 'week');
     };
 
-    // 啟動遊戲的統一核心邏輯
+    function switchTab(stage, type) {
+        currentTabs[stage] = type;
+        document.getElementById(`tab-${stage}-week`).classList.remove('active');
+        document.getElementById(`tab-${stage}-today`).classList.remove('active');
+        document.getElementById(`tab-${stage}-history`).classList.remove('active');
+        document.getElementById(`tab-${stage}-${type}`).classList.add('active');
+        
+        // 動態修改表頭文字
+        const thEl = document.getElementById(stage === 'home' ? 'th-header-type' : 'th-result-header-type');
+        if (type === 'week') thEl.innerText = "近7日打卡跡象 (右為今天)";
+        else if (type === 'today') thEl.innerText = "本次挑戰詳細時分秒";
+        else thEl.innerText = "歷史挑戰日期紀錄";
+
+        loadLeaderboardData(`${stage}-leaderboard-body`, type);
+    }
+
     function startGame(mode) {
         const nameInput = document.getElementById('username').value.trim();
-        if (!nameInput) {
-            alert('請先輸入名字喔！');
-            return;
-        }
-        
+        if (!nameInput) { alert('請先輸入名字喔！'); return; }
         currentData.name = nameInput;
         currentData.mode = mode;
         executeStart();
     }
 
-    // 【新增】直接使用現有名字與模式再次挑戰
     function restartGame() {
-        if (!currentData.name) {
-            exitGame();
-            return;
-        }
+        if (!currentData.name) { exitGame(); return; }
         executeStart();
     }
 
-    // 執行初始化畫面與出題
     function executeStart() {
         currentData.total = 0;
         currentData.correct = 0;
@@ -305,11 +390,9 @@
         }
 
         updateScoreboard();
-        
         document.getElementById('login-stage').classList.add('hidden');
         document.getElementById('result-stage').classList.add('hidden');
         document.getElementById('quiz-stage').classList.remove('hidden');
-        
         generateQuestion();
 
         if (currentData.mode === 'contest') {
@@ -317,10 +400,7 @@
             timerInterval = setInterval(() => {
                 timeLeft--;
                 document.getElementById('timer-sec').innerText = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    endContest();
-                }
+                if (timeLeft <= 0) { clearInterval(timerInterval); endContest(); }
             }, 1000);
         }
     }
@@ -330,7 +410,6 @@
         while (num === 0) { num = Math.floor(Math.random() * 21) - 10; }
         return num;
     }
-    
     function getRandomOp() { return Math.random() < 0.5 ? '+' : '-'; }
     function formatNum(num) { return num < 0 ? `(${num})` : num; }
 
@@ -345,59 +424,34 @@
         document.getElementById('feedback-text').className = 'feedback';
         document.getElementById('feedback-text').innerText = '';
         document.getElementById('space-hint').classList.add('hidden');
-        
         const ansInput = document.getElementById('user-answer');
-        ansInput.value = '';
-        ansInput.disabled = false;
-        ansInput.focus();
+        ansInput.value = ''; ansInput.disabled = false; ansInput.focus();
         document.getElementById('btn-submit').disabled = false;
 
         let qText = '';
         if (currentData.mode === 'basic' || currentData.mode === 'contest') {
             let n1, n2, op;
-            do {
-                n1 = getRandomNumWithoutZero();
-                n2 = getRandomNumWithoutZero();
-                op = getRandomOp();
-            } while (isSimpleQuiz(n1, op, n2));
-
+            do { n1 = getRandomNumWithoutZero(); n2 = getRandomNumWithoutZero(); op = getRandomOp(); } while (isSimpleQuiz(n1, op, n2));
             qText = `${formatNum(n1)} ${op} ${formatNum(n2)} = ?`;
             currentAnswer = op === '+' ? n1 + n2 : n1 - n2;
-        } 
-        else if (currentData.mode === 'advanced') {
+        } else if (currentData.mode === 'advanced') {
             let n1, n2, n3, op1, op2, temp;
-            do {
-                n1 = getRandomNumWithoutZero();
-                n2 = getRandomNumWithoutZero();
-                op1 = getRandomOp();
-            } while (isSimpleQuiz(n1, op1, n2));
-            
+            do { n1 = getRandomNumWithoutZero(); n2 = getRandomNumWithoutZero(); op1 = getRandomOp(); } while (isSimpleQuiz(n1, op1, n2));
             temp = op1 === '+' ? n1 + n2 : n1 - n2;
-
-            do {
-                n3 = getRandomNumWithoutZero();
-                op2 = getRandomOp();
-            } while (isSimpleQuiz(temp, op2, n3));
-
+            do { n3 = getRandomNumWithoutZero(); op2 = getRandomOp(); } while (isSimpleQuiz(temp, op2, n3));
             qText = `${formatNum(n1)} ${op1} ${formatNum(n2)} ${op2} ${formatNum(n3)} = ?`;
             currentAnswer = op2 === '+' ? temp + n3 : temp - n3;
         }
-
         document.getElementById('question-text').innerText = qText;
     }
 
     function checkAnswer() {
         if (currentData.mode !== 'contest' && isWaitingForNext) return;
-
         const userInput = document.getElementById('user-answer').value;
-        if (userInput === '') {
-            alert('請輸入答案！');
-            return;
-        }
+        if (userInput === '') { alert('請輸入答案！'); return; }
 
         const userAnswer = parseInt(userInput, 10);
         currentData.total++;
-
         const feedbackEl = document.getElementById('feedback-text');
         const ansInput = document.getElementById('user-answer');
 
@@ -410,20 +464,16 @@
             } else {
                 feedbackEl.innerText = '❌ 算錯囉，再試一次！';
                 feedbackEl.className = 'feedback wrong';
-                ansInput.value = '';
-                ansInput.focus();
+                ansInput.value = ''; ansInput.focus();
             }
-        } 
-        else {
+        } else {
             ansInput.disabled = true;
             document.getElementById('btn-submit').disabled = true;
-
             if (userAnswer === currentAnswer) {
                 currentData.correct++;
                 feedbackEl.innerText = '⭕ 太棒了！答對了！';
                 feedbackEl.className = 'feedback correct';
                 savePracticeData(); 
-                
                 isWaitingForNext = true;
                 setTimeout(() => { if(isWaitingForNext) generateQuestion(); }, 2000);
             } else {
@@ -432,24 +482,17 @@
                 feedbackEl.className = 'feedback wrong';
                 document.getElementById('space-hint').classList.remove('hidden');
                 savePracticeData(); 
-                
                 isWaitingForNext = true;
             }
         }
-
         updateScoreboard();
     }
 
     function updateScoreboard() {
         document.getElementById('lbl-correct').innerText = currentData.correct;
         document.getElementById('lbl-total').innerText = currentData.total;
-        
-        if (currentData.mode === 'contest') {
-            document.getElementById('lbl-wrong').innerText = currentData.total; 
-        } else {
-            document.getElementById('lbl-wrong').innerText = currentData.wrong; 
-        }
-        
+        if (currentData.mode === 'contest') document.getElementById('lbl-wrong').innerText = currentData.total; 
+        else document.getElementById('lbl-wrong').innerText = currentData.wrong; 
         let rate = currentData.total === 0 ? 0 : Math.round((currentData.correct / currentData.total) * 100);
         document.getElementById('lbl-rate').innerText = rate;
     }
@@ -459,25 +502,18 @@
         document.getElementById('user-answer').blur();
         document.getElementById('quiz-stage').classList.add('hidden');
         document.getElementById('result-stage').classList.remove('hidden');
-
         document.getElementById('final-correct').innerText = currentData.correct;
         document.getElementById('final-total').innerText = currentData.total;
         let rate = currentData.total === 0 ? 0 : Math.round((currentData.correct / currentData.total) * 100);
         document.getElementById('final-rate').innerText = rate;
-
         saveContestDataAndLoadLeaderboard();
     }
 
     document.addEventListener('keydown', function(event) {
         if (document.getElementById('quiz-stage').classList.contains('hidden')) return;
-
-        if (event.key === 'Enter') {
-            if (currentData.mode === 'contest' || !isWaitingForNext) { checkAnswer(); }
-        } else if (event.key === ' ' || event.code === 'Space') {
-            if (currentData.mode !== 'contest' && isWaitingForNext) {
-                event.preventDefault();
-                generateQuestion();
-            }
+        if (event.key === 'Enter') { if (currentData.mode === 'contest' || !isWaitingForNext) { checkAnswer(); } } 
+        else if (event.key === ' ' || event.code === 'Space') {
+            if (currentData.mode !== 'contest' && isWaitingForNext) { event.preventDefault(); generateQuestion(); }
         }
     });
 
@@ -487,70 +523,174 @@
         document.getElementById('result-stage').classList.add('hidden');
         document.getElementById('login-stage').classList.remove('hidden');
         document.getElementById('username').value = '';
-        loadLeaderboardData('home-leaderboard-body');
+        switchTab('home', 'week');
     }
 
-    // 【修正】移除原先未定義的 saveDataHTML5 錯誤呼叫，完全走 Firebase 雲端儲存
     function savePracticeData() {
         if (!database) return;
         let rate = Math.round((currentData.correct / currentData.total) * 100);
         let modeText = currentData.mode === 'basic' ? '基礎' : '進階';
-        
         database.ref('quiz_records/' + currentData.name + '/' + modeText).set({
-            name: currentData.name,
-            mode: modeText,
-            total: currentData.total,
-            correct: currentData.correct,
-            wrong: currentData.wrong,
-            rate: rate + '%',
+            name: currentData.name, mode: modeText, total: currentData.total,
+            correct: currentData.correct, wrong: currentData.wrong, rate: rate + '%',
             lastUpdate: new Date().toLocaleString()
         });
     }
 
-    function loadLeaderboardData(elementId) {
+    // 獲取最近 7 天的日期陣列字串 ["2026/7/8", ..., "2026/7/14"]
+    function getPast7Days() {
+        let dates = [];
+        for (let i = 6; i >= 0; i--) {
+            let d = new Date();
+            d.setDate(d.getDate() - i);
+            dates.push(d.toLocaleDateString('zh-TW'));
+        }
+        return dates;
+    }
+
+    // 【核心改版】載入與計算三大排行榜與打卡牆
+    function loadLeaderboardData(elementId, filterType) {
         if (!database) return;
         database.ref('contest_records').once('value', (snapshot) => {
-            let allRecords = [];
+            const todayStr = new Date().toLocaleDateString('zh-TW');
+            const past7Days = getPast7Days();
+            
+            // 用以整合「每個學生」的多筆分散數據
+            let studentMap = {};
+
             snapshot.forEach((childSnapshot) => {
                 let data = childSnapshot.val();
-                let totalAns = data.total || data.correct || 1;
-                let calculatedRate = Math.round((data.correct / totalAns) * 100);
-                
-                allRecords.push({
-                    name: data.name,
-                    correct: data.correct,
-                    total: totalAns,
-                    rate: calculatedRate,
-                    time: data.time || ''
-                });
+                let name = data.name ? data.name.trim() : '匿名';
+                let correct = parseInt(data.correct || 0, 10);
+                let total = parseInt(data.total || correct || 1, 10);
+                let timeStr = data.time || '';
+                let datePart = timeStr.split(' ')[0] || '';
+
+                // 如果完全沒有初始化過這個學生，建立初始結構
+                if (!studentMap[name]) {
+                    studentMap[name] = {
+                        name: name,
+                        historyMaxCorrect: 0, totalAnsOfMax: 0, maxRate: 0, maxTime: '',
+                        todayMaxCorrect: 0, todayTotalAns: 0, todayRate: 0, todayTime: '',
+                        weekActiveDays: 0, weekTotalCorrect: 0, weekTotalTotal: 0,
+                        dayRecords: {} // 用來記錄每一天分別對了幾題，格式 {"2026/7/14": 15}
+                    };
+                    past7Days.forEach(d => studentMap[name].dayRecords[d] = 0);
+                }
+
+                let s = studentMap[name];
+
+                // 1. 歷史最佳紀錄統計
+                if (correct > s.historyMaxCorrect || (correct === s.historyMaxCorrect && (correct/total) > (s.historyMaxCorrect/s.totalAnsOfMax))) {
+                    s.historyMaxCorrect = correct;
+                    s.totalAnsOfMax = total;
+                    s.maxRate = Math.round((correct / total) * 100);
+                    s.maxTime = timeStr;
+                }
+
+                // 2. 今日最佳紀錄統計
+                if (timeStr.startsWith(todayStr)) {
+                    if (correct > s.todayMaxCorrect) {
+                        s.todayMaxCorrect = correct;
+                        s.todayTotalAns = total;
+                        s.todayRate = Math.round((correct / total) * 100);
+                        s.todayTime = timeStr.includes(' ') ? timeStr.split(' ')[1] : timeStr;
+                    }
+                }
+
+                // 3. 近 7 日打卡累加
+                if (s.dayRecords[datePart] !== undefined) {
+                    s.dayRecords[datePart] += correct;
+                }
             });
 
-            allRecords.sort((a, b) => {
-                if (b.correct !== a.correct) return b.correct - a.correct;
-                if (b.rate !== a.rate) return b.rate - a.rate;
-                return a.total - b.total;
+            // 整理成陣列，並計算勤奮度
+            let allStudents = Object.values(studentMap);
+            allStudents.forEach(s => {
+                let activeDays = 0;
+                past7Days.forEach(d => { if (s.dayRecords[d] > 0) activeDays++; });
+                s.weekActiveDays = activeDays;
             });
+
+            // 根據頁籤進行不同的分流與排序
+            let displayList = [];
+            if (filterType === 'week') {
+                // 【本週勤奮榜排序】：打卡天數多(降序) -> 7天累積總題數多(降序)
+                allStudents.forEach(s => {
+                    let total7DaysCorrect = 0;
+                    past7Days.forEach(d => total7DaysCorrect += s.dayRecords[d]);
+                    s.weekTotalCorrect = total7DaysCorrect;
+                });
+                displayList = allStudents.filter(s => s.weekActiveDays > 0);
+                displayList.sort((a, b) => {
+                    if (b.weekActiveDays !== a.weekActiveDays) return b.weekActiveDays - a.weekActiveDays;
+                    return b.weekTotalCorrect - a.weekTotalCorrect;
+                });
+            } 
+            else if (filterType === 'today') {
+                // 【今日榜排序】
+                displayList = allStudents.filter(s => s.todayMaxCorrect > 0);
+                displayList.sort((a, b) => b.todayMaxCorrect - a.todayMaxCorrect);
+            } 
+            else {
+                // 【歷史榜排序】
+                displayList = [...allStudents];
+                displayList.sort((a, b) => b.historyMaxCorrect - a.historyMaxCorrect);
+            }
 
             const tbody = document.getElementById(elementId);
             if (!tbody) return;
             tbody.innerHTML = '';
 
-            if (allRecords.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5">目前尚無競賽紀錄</td></tr>`;
+            if (displayList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5">目前尚無相關紀錄</td></tr>`;
                 return;
             }
 
-            allRecords.slice(0, 500).forEach((record, index) => {
+            let limit = filterType === 'history' ? 500 : 100;
+            displayList.slice(0, limit).forEach((record, index) => {
                 let rowClass = index === 0 ? 'class="top1"' : '';
-                let shortTime = record.time.replace(/^\d{4}\//, ""); 
+                
+                let centerTdContent = ''; // 中間主要欄位內容
+                let scoreText = '';
+                let rateText = '';
+
+                if (filterType === 'week') {
+                    // 生成 7 個簽到燈泡
+                    let dotsHtml = '<div class="dot-container">';
+                    past7Days.forEach(d => {
+                        let score = record.dayRecords[d];
+                        let shortDate = d.substring(d.indexOf('/') + 1); // 簡化成 7/14 格式
+                        if (score > 0) {
+                            dotsHtml += `<span class="dot active" data-tip="${shortDate}: 答對 ${score} 題"></span>`;
+                        } else {
+                            dotsHtml += `<span class="dot" data-tip="${shortDate}: 未練習"></span>`;
+                        }
+                    });
+                    dotsHtml += '</div>';
+                    centerTdContent = dotsHtml + ` <span style="font-size:11px;color:#7f8c8d;">(${record.weekActiveDays}天)</span>`;
+                    scoreText = `${record.weekTotalCorrect} 題`;
+                    rateText = `-`;
+                } 
+                else if (filterType === 'today') {
+                    centerTdContent = `<span style="font-size:12px;color:#7f8c8d;">${record.todayTime}</span>`;
+                    scoreText = `${record.todayMaxCorrect} 題`;
+                    rateText = `${record.todayRate}%`;
+                } 
+                else {
+                    let shortTime = record.maxTime.replace(/^\d{4}\//, ""); 
+                    centerTdContent = `<span style="font-size:12px;color:#7f8c8d;">${shortTime}</span>`;
+                    scoreText = `${record.historyMaxCorrect} 題`;
+                    rateText = `${record.maxRate}%`;
+                }
 
                 tbody.innerHTML += `
                     <tr ${rowClass}>
                         <td>${index + 1}</td>
-                        <td>${record.name}</td>
-                        <td style="font-weight:bold; color:#e74c3c;">${record.correct} 題</td>
-                        <td style="font-weight:bold; color:#2980b9;">${record.rate}%</td>
-                        <td style="font-size:11px; color:#7f8c8d;">${shortTime}</td>
+                        <td style="font-weight:bold;">${record.name}</td>
+                        <td>${centerTdContent}</td>
+                        <td style="font-weight:bold; color:#e74c3c;">${scoreText}</td>
+                        <td style="font-weight:bold; color:#2980b9;">${rateText}</td>
                     </tr>
                 `;
             });
@@ -568,7 +708,8 @@
             total: currentData.total,
             time: nowString
         }).then(() => {
-            loadLeaderboardData('result-leaderboard-body');
+            let currentResultTab = currentTabs['result'];
+            loadLeaderboardData('result-leaderboard-body', currentResultTab);
         });
     }
 </script>
