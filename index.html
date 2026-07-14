@@ -237,7 +237,7 @@
 
         <div class="leaderboard">
             <div class="tab-container">
-                <button id="tab-home-week" class="tab-btn active" onclick="switchTab('home', 'week')">🔥 本週勤奮榜 (看天數)</button>
+                <button id="tab-home-week" class="tab-btn active" onclick="switchTab('home', 'week')">🔥 一週勤奮榜 (看天數)</button>
                 <button id="tab-home-today" class="tab-btn" onclick="switchTab('home', 'today')">📅 今日即時榜</button>
                 <button id="tab-home-history" class="tab-btn" onclick="switchTab('home', 'history')">📜 歷史總排行</button>
             </div>
@@ -302,7 +302,7 @@
 
         <div class="leaderboard">
             <div class="tab-container">
-                <button id="tab-result-week" class="tab-btn active" onclick="switchTab('result', 'week')">🔥 本週勤奮榜</button>
+                <button id="tab-result-week" class="tab-btn active" onclick="switchTab('result', 'week')">🔥 一週勤奮榜</button>
                 <button id="tab-result-today" class="tab-btn" onclick="switchTab('result', 'today')">📅 今日即時榜</button>
                 <button id="tab-result-history" class="tab-btn" onclick="switchTab('result', 'history')">📜 歷史總排行</button>
             </div>
@@ -665,7 +665,7 @@
 
                 let s = studentMap[name];
 
-                // 1. 本週勤奮榜：統計近 7 日全模式數據（基礎 + 進階 + 挑戰合併）
+                // 1. 一週勤奮榜：統計近 7 日全模式數據（基礎 + 進階 + 挑戰合併）
                 if (s.dayRecords[datePart] !== undefined) {
                     s.dayRecords[datePart].correct += correct;
                     s.dayRecords[datePart].total += total;
