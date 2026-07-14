@@ -279,8 +279,10 @@
             <input type="number" id="user-answer" placeholder="請輸入答案" autocomplete="off">
             <br>
             <button id="btn-submit" onclick="checkAnswer()" class="btn-submit">送出答案 (Enter)</button>
-            <div class="feedback" id="feedback-text"></div>
-            <div class="hint hidden" id="space-hint">請按 【空白鍵 Space】 進入下一題</div>
+            <div class="feedback" id="feedback-text" onclick="if(isWaitingForNext) generateQuestion();" style="cursor: pointer;"></div>
+            <div class="hint hidden" id="space-hint" onclick="if(isWaitingForNext) generateQuestion();" style="cursor: pointer; text-decoration: underline;">
+                請按 【空白鍵 Space】 (手機【點擊此處】 進入下一題)
+            </div>
         </div>
         <button onclick="exitGame()" class="btn-nav" style="margin-top:15px;">返回主選單</button>
     </div>
