@@ -136,6 +136,7 @@
             background-color: #fffdf5;
             padding: 5px;
             box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+            position: relative;
         }
         
         .rank-table {
@@ -163,6 +164,7 @@
             justify-content: center;
             align-items: center;
             vertical-align: middle;
+            position: relative;
         }
         .dot {
             width: 12px;
@@ -176,6 +178,7 @@
         .dot.active {
             background-color: #2ecc71;
         }
+
         /* 1. 懸浮提示小卡片（改為向左側展開，利用左邊名字的空間） */
         .dot::after {
             content: attr(data-tip);
@@ -209,7 +212,6 @@
         /* 2. 控制滑鼠劃過去時顯示 */
         .dot:hover::after {
             opacity: 1 !important;
-        
         }
         
         .count-badge {
@@ -293,7 +295,7 @@
             <div>最終正確率: <span id="final-rate">0</span>%</div>
         </div>
         
-        <button onclick="restartGame()" class="btn-again">🔥 再挑戰一次 </button>
+        <button onclick="restartGame()" class="btn-again">🔥 再挑戰一次 (名字免重打)</button>
         <button onclick="exitGame()" class="btn-nav">🏠 返回主選單</button>
 
         <div class="leaderboard">
@@ -350,6 +352,8 @@
 
     // 方案 B：練習模式本地累計暫存器
     let practiceBuffer = { correct: 0, total: 0 };
+    // 方案 ② 核心：用來記錄該次練習唯一識別碼的 Session ID
+    let currentSessionId = "";
 
     window.onload = function() {
         switchTab('home', 'week');
@@ -413,6 +417,9 @@
         // 重置本地端練習暫存器
         practiceBuffer.correct = 0;
         practiceBuffer.total = 0;
+        
+        // 方案 ②：進入關卡時，自動產生專屬本次練習的唯一 Session ID
+        currentSessionId = "session_" + new Date().getTime() + "_" + Math.floor(Math.random() * 1000);
 
         document.getElementById('lbl-name').innerText = currentData.name;
         let modeTitle = '基礎練習';
@@ -538,7 +545,7 @@
         updateScoreboard();
     }
 
-    // 方案 B 自動背景存檔（滿10題或返回選單觸發）
+    // 方案 B 自動背景存檔（滿10題或返回選單觸發），加入 Session ID
     function savePracticeBatch() {
         if (!database || practiceBuffer.total === 0) return;
         const timestamp = new Date().getTime();
@@ -550,7 +557,8 @@
             correct: practiceBuffer.correct,
             total: practiceBuffer.total,
             time: nowString,
-            mode: modeText
+            mode: modeText,
+            sessionId: currentSessionId // 方案 ②：綁定本次練習唯一的 Session ID 寫入資料庫
         });
 
         // 存檔完成後，重置暫存計數器
@@ -628,6 +636,7 @@
                 let timeStr = data.time || '';
                 let datePart = timeStr.split(' ')[0] || '';
                 let recordMode = data.mode || '挑戰'; // 相容舊數據預設為挑戰
+                let recordSessionId = data.sessionId || ''; // 方案 ② 載入 Session ID
 
                 if (!studentMap[name]) {
                     studentMap[name] = {
@@ -644,9 +653,10 @@
                         studentMap[name].dayRecords[d] = { 
                             correct: 0, 
                             total: 0,
-                            basic: { correct: 0, total: 0, count: 0 },
-                            advanced: { correct: 0, total: 0, count: 0 },
-                            contest: { correct: 0, total: 0, count: 0 }
+                            // 各模式使用 Set 來統計不重複的 SessionID
+                            basic: { correct: 0, total: 0, sessions: new Set() },
+                            advanced: { correct: 0, total: 0, sessions: new Set() },
+                            contest: { correct: 0, total: 0, sessions: new Set() }
                         };
                     });
                 }
@@ -658,18 +668,21 @@
                     s.dayRecords[datePart].correct += correct;
                     s.dayRecords[datePart].total += total;
                     
+                    // 方案 ② 統計邏輯：若資料庫存在 sessionId 則加入 Set，若無則依舊當成一筆(相容舊資料)
+                    let sessionKey = recordSessionId || ("legacy_" + childSnapshot.key);
+
                     if (recordMode === '基礎') {
                         s.dayRecords[datePart].basic.correct += correct;
                         s.dayRecords[datePart].basic.total += total;
-                        s.dayRecords[datePart].basic.count += 1;
+                        s.dayRecords[datePart].basic.sessions.add(sessionKey);
                     } else if (recordMode === '進階') {
                         s.dayRecords[datePart].advanced.correct += correct;
                         s.dayRecords[datePart].advanced.total += total;
-                        s.dayRecords[datePart].advanced.count += 1;
+                        s.dayRecords[datePart].advanced.sessions.add(sessionKey);
                     } else { // 挑戰
                         s.dayRecords[datePart].contest.correct += correct;
                         s.dayRecords[datePart].contest.total += total;
-                        s.dayRecords[datePart].contest.count += 1;
+                        s.dayRecords[datePart].contest.sessions.add(sessionKey);
                     }
                 }
 
@@ -775,21 +788,24 @@
                             // 組裝多模式動態懸浮框文字
                             let tipText = `${shortDate} 總計：答對 ${score} 題, 答錯 ${wrong} 題\n------------------------------`;
                             
-                            // 基礎練習
-                            if (dayData.basic.count > 0) {
+                            // 基礎練習 (用 Set 的大小統計真正的練習次數)
+                            let basicCount = dayData.basic.sessions.size;
+                            if (basicCount > 0) {
                                 let rate = dayData.basic.total === 0 ? 0 : Math.round((dayData.basic.correct / dayData.basic.total) * 100);
-                                tipText += `\n📘 基礎: 練習 ${dayData.basic.count} 次, 答對 ${dayData.basic.correct} 題 (正確率 ${rate}%)`;
+                                tipText += `\n📘 基礎: 練習 ${basicCount} 次, 答對 ${dayData.basic.correct} 題 (正確率 ${rate}%)`;
                             }
-                            // 進階練習
-                            if (dayData.advanced.count > 0) {
+                            // 進階練習 (用 Set 的大小統計真正的練習次數)
+                            let advCount = dayData.advanced.sessions.size;
+                            if (advCount > 0) {
                                 let rate = dayData.advanced.total === 0 ? 0 : Math.round((dayData.advanced.correct / dayData.advanced.total) * 100);
-                                tipText += `\n📗 進階: 練習 ${dayData.advanced.count} 次, 答對 ${dayData.advanced.correct} 題 (正確率 ${rate}%)`;
+                                tipText += `\n📗 進階: 練習 ${advCount} 次, 答對 ${dayData.advanced.correct} 題 (正確率 ${rate}%)`;
                             }
-                            // 挑戰賽
-                            if (dayData.contest.count > 0) {
+                            // 挑戰賽 (用 Set 的大小統計真正的練習次數)
+                            let contestCount = dayData.contest.sessions.size;
+                            if (contestCount > 0) {
                                 let rate = dayData.contest.total === 0 ? 0 : Math.round((dayData.contest.correct / dayData.contest.total) * 100);
-                                let avgCorrect = (dayData.contest.correct / dayData.contest.count).toFixed(1);
-                                tipText += `\n⏱️ 挑戰: 練習 ${dayData.contest.count} 次, 答對 ${dayData.contest.correct} 題 (正確率 ${rate}% / 均對 ${avgCorrect} 題)`;
+                                let avgCorrect = (dayData.contest.correct / contestCount).toFixed(1);
+                                tipText += `\n⏱️ 挑戰: 練習 ${contestCount} 次, 答對 ${dayData.contest.correct} 題 (正確率 ${rate}% / 均對 ${avgCorrect} 題)`;
                             }
 
                             dotsHtml += `<span class="dot active" data-tip="${tipText}"></span>`;
@@ -837,7 +853,8 @@
             correct: currentData.correct,
             total: currentData.total,
             time: nowString,
-            mode: '挑戰' // 標記為挑戰賽
+            mode: '挑戰', // 標記為挑戰賽
+            sessionId: currentSessionId // 挑戰賽同樣綁定當次專屬 Session ID
         }).then(() => {
             let currentResultTab = currentTabs['result'];
             loadLeaderboardData('result-leaderboard-body', currentResultTab);
