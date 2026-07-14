@@ -789,7 +789,7 @@
                             if (dayData.contest.count > 0) {
                                 let rate = dayData.contest.total === 0 ? 0 : Math.round((dayData.contest.correct / dayData.contest.total) * 100);
                                 let avgCorrect = (dayData.contest.correct / dayData.contest.count).toFixed(1);
-                                tipText += `\n⏱️ 挑戰: 練習 ${dayData.contest.count} 次, 答對 ${dayData.contest.correct} 題 (正確率 ${rate}% / 平均每次答對 ${avgCorrect} 題)`;
+                                tipText += `\n⏱️ 挑戰: 練習 ${dayData.contest.count} 次, 答對 ${dayData.contest.correct} 題 (正確率 ${rate}% / 均對 ${avgCorrect} 題)`;
                             }
 
                             dotsHtml += `<span class="dot active" data-tip="${tipText}"></span>`;
