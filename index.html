@@ -511,8 +511,8 @@
                 return;
             }
 
-            // 【已修改】取出前 100 名
-            allRecords.slice(0, 100).forEach((record, index) => {
+            // 【已修改】取出前 500 名
+            allRecords.slice(0, 500).forEach((record, index) => {
                 let rowClass = index === 0 ? 'class="top1"' : '';
                 let shortTime = record.time.replace(/^\d{4}\//, ""); 
 
