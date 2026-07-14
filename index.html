@@ -105,10 +105,9 @@
         }
         .leaderboard h3 { margin-top: 0; color: #b7950b; text-align: center; font-size: 22px; margin-bottom: 10px;}
         
-        /* 新增：滾動條容器控制，避免 100 名拉得太長 */
         .leaderboard-scroll {
-            max-height: 350px; /* 固定高度，超過會出現滾動條 */
-            overflow-y: auto;  /* 開啟垂直滾動 */
+            max-height: 350px; 
+            overflow-y: auto;  
             border-radius: 6px;
             background-color: #fffdf5;
             padding: 5px;
@@ -120,7 +119,6 @@
             border-collapse: collapse;
             font-size: 14px;
         }
-        /* 讓表格標頭固定在頂部，滾動時不消失 */
         .rank-table th {
             position: sticky;
             top: 0;
@@ -206,7 +204,7 @@
         <button onclick="exitGame()" class="btn-basic">再挑戰一次 / 回主選單</button>
 
         <div class="leaderboard">
-            <h3>🏆 頂尖對決：前 100 名排行榜</h3>
+            <h3>🏆 頂尖對決：前 500 名排行榜</h3>
             <div class="leaderboard-scroll">
                 <table class="rank-table">
                     <thead>
@@ -253,12 +251,10 @@
     let timeLeft = 60;
     let timerInterval = null;
 
-    // 網頁初始化完畢，立刻載入首頁排行榜
     window.onload = function() {
         loadLeaderboardData('home-leaderboard-body');
     };
 
-    // 啟動遊戲 
     function startGame(mode) {
         const nameInput = document.getElementById('username').value.trim();
         if (!nameInput) {
@@ -319,6 +315,15 @@
     function getRandomOp() { return Math.random() < 0.5 ? '+' : '-'; }
     function formatNum(num) { return num < 0 ? `(${num})` : num; }
 
+    // 【核心邏輯升級】檢查是否屬於小學簡單題目（正+正 或 大-小）
+    function isSimpleQuiz(n1, op, n2) {
+        // 情況 1：正數 + 正數
+        if (op === '+' && n1 > 0 && n2 > 0) return true;
+        // 情況 2：大數 - 小數 (兩數皆正 且 前面大於後面)
+        if (op === '-' && n1 > 0 && n2 > 0 && n1 > n2) return true;
+        return false;
+    }
+
     function generateQuestion() {
         isWaitingForNext = false;
         document.getElementById('feedback-text').className = 'feedback';
@@ -333,20 +338,35 @@
 
         let qText = '';
         if (currentData.mode === 'basic' || currentData.mode === 'contest') {
-            let n1 = getRandomNumWithoutZero();
-            let n2 = getRandomNumWithoutZero();
-            let op = getRandomOp();
+            let n1, n2, op;
+            // 迴圈抽取直到「不屬於簡單題目」為止
+            do {
+                n1 = getRandomNumWithoutZero();
+                n2 = getRandomNumWithoutZero();
+                op = getRandomOp();
+            } while (isSimpleQuiz(n1, op, n2));
+
             qText = `${formatNum(n1)} ${op} ${formatNum(n2)} = ?`;
             currentAnswer = op === '+' ? n1 + n2 : n1 - n2;
         } 
         else if (currentData.mode === 'advanced') {
-            let n1 = getRandomNumWithoutZero();
-            let n2 = getRandomNumWithoutZero();
-            let n3 = getRandomNumWithoutZero();
-            let op1 = getRandomOp();
-            let op2 = getRandomOp();
+            let n1, n2, n3, op1, op2, temp;
+            // 確保第一步和第二步運算都不是簡單題型
+            do {
+                n1 = getRandomNumWithoutZero();
+                n2 = getRandomNumWithoutZero();
+                op1 = getRandomOp();
+            } while (isSimpleQuiz(n1, op1, n2));
+            
+            temp = op1 === '+' ? n1 + n2 : n1 - n2;
+
+            // 如果運算中途 temp 剛好等於 0，重新抽取 n3 直到它不為 0
+            do {
+                n3 = getRandomNumWithoutZero();
+                op2 = getRandomOp();
+            } while (isSimpleQuiz(temp, op2, n3));
+
             qText = `${formatNum(n1)} ${op1} ${formatNum(n2)} ${op2} ${formatNum(n3)} = ?`;
-            let temp = op1 === '+' ? n1 + n2 : n1 - n2;
             currentAnswer = op2 === '+' ? temp + n3 : temp - n3;
         }
 
@@ -407,6 +427,7 @@
         updateScoreboard();
     }
 
+    style="text-align: center;"
     function updateScoreboard() {
         document.getElementById('lbl-correct').innerText = currentData.correct;
         document.getElementById('lbl-total').innerText = currentData.total;
@@ -454,8 +475,6 @@
         document.getElementById('result-stage').classList.add('hidden');
         document.getElementById('login-stage').classList.remove('hidden');
         document.getElementById('username').value = '';
-        
-        // 返回主選單時，再次更新首頁排行榜最新戰況
         loadLeaderboardData('home-leaderboard-body');
     }
 
@@ -475,14 +494,12 @@
         });
     }
 
-    // 核心數據加載與精準排序邏輯 (已修改為前 100 名)
     function loadLeaderboardData(elementId) {
         if (!database) return;
         database.ref('contest_records').once('value', (snapshot) => {
             let allRecords = [];
             snapshot.forEach((childSnapshot) => {
                 let data = childSnapshot.val();
-                
                 let totalAns = data.total || data.correct || 1;
                 let calculatedRate = Math.round((data.correct / totalAns) * 100);
                 
@@ -495,7 +512,6 @@
                 });
             });
 
-            // 【排序邏輯】優先比答對題數(降序) -> 再比正確率(降序) -> 再比總次數(升序)
             allRecords.sort((a, b) => {
                 if (b.correct !== a.correct) return b.correct - a.correct;
                 if (b.rate !== a.rate) return b.rate - a.rate;
@@ -511,7 +527,7 @@
                 return;
             }
 
-            // 【已修改】取出前 500 名
+            // 【已修改】順利取前 500 名
             allRecords.slice(0, 500).forEach((record, index) => {
                 let rowClass = index === 0 ? 'class="top1"' : '';
                 let shortTime = record.time.replace(/^\d{4}\//, ""); 
