@@ -333,11 +333,13 @@
     let timerInterval = null;
     let currentTabs = { home: 'week', result: 'week' };
 
+    // 解決一進入畫面沒隱藏正確率的問題：改為 onload 直接呼叫 switchTab，初始化版面佈局
     window.onload = function() {
-        loadLeaderboardData('home-leaderboard-body', 'week');
+        switchTab('home', 'week');
+        switchTab('result', 'week');
     };
 
-    // 切換分頁時，動態顯示/隱藏「正確率」欄位
+    // 切換分頁時，動態顯示/隱藏「正確率」欄位並重新規劃比例
     function switchTab(stage, type) {
         currentTabs[stage] = type;
         document.getElementById(`tab-${stage}-week`).classList.remove('active');
@@ -506,6 +508,7 @@
         updateScoreboard();
     }
 
+    // 歷史排行那, 累計次數拿掉 updateScoreboard
     function updateScoreboard() {
         document.getElementById('lbl-correct').innerText = currentData.correct;
         document.getElementById('lbl-total').innerText = currentData.total;
@@ -656,7 +659,7 @@
             if (!tbody) return;
             tbody.innerHTML = '';
 
-            // 根據是否是週排行(week)動態調整無紀錄時的 colspan 數量
+            // 根據是否是週排行(week)動態調整 colspan 數量以配合 layout
             const currentColspan = filterType === 'week' ? 4 : 5;
             if (displayList.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="${currentColspan}">目前尚無相關紀錄</td></tr>`;
@@ -670,26 +673,27 @@
                 let displayName = record.name;
                 let centerTdContent = ''; 
                 let scoreText = '';
-                let rateTdHtml = ''; // 動態存放正確率 TD 的 HTML
+                let rateTdHtml = ''; 
 
                 if (filterType === 'today') {
                     displayName += `<span class="count-badge">(今練 ${record.todayCount} 次)</span>`;
-                } else if (filterType === 'history') {
-                    displayName += `<span class="count-badge">(累計 ${record.historyTotalCount} 次)</span>`;
-                }
+                } 
+                // 【細節修改3】：已將 filterType === 'history' 的 (累計 X 次) 判斷拿掉，不再於名字後渲染它
 
                 if (filterType === 'week') {
-                    // 生成打卡圓點（綠色），帶有每日答題數及正確率的懸浮提示
                     let dotsHtml = '<div class="dot-container">';
                     past7Days.forEach(d => {
                         let dayData = record.dayRecords[d];
                         let score = dayData.correct;
                         let total = dayData.total;
+                        // 【細節修改2】：動態算出當日的「答錯數量」
+                        let wrong = Math.max(0, total - score);
                         let shortDate = d.substring(d.indexOf('/') + 1);
                         
                         if (score > 0) {
                             let dayRate = total === 0 ? 0 : Math.round((score / total) * 100);
-                            dotsHtml += `<span class="dot active" data-tip="${shortDate}: 答對 ${score} 題 (正確率 ${dayRate}%)"></span>`;
+                            // 【細節修改2】：懸浮框文字中新增了「答錯數量」及「嘗試次數」
+                            dotsHtml += `<span class="dot active" data-tip="${shortDate}: 答對 ${score} 題, 答錯 ${wrong} 題 (嘗試 ${total} 次，正確率 ${dayRate}%)"></span>`;
                         } else {
                             dotsHtml += `<span class="dot" data-tip="${shortDate}: 未練習"></span>`;
                         }
@@ -697,7 +701,7 @@
                     dotsHtml += '</div>';
                     centerTdContent = dotsHtml + ` <span style="font-size:11px;color:#7f8c8d;">(${record.weekActiveDays}天)</span>`;
                     scoreText = `${record.weekTotalCorrect} 題`;
-                    rateTdHtml = ''; // 週勤奮榜時不渲染第5個正確率單元格
+                    rateTdHtml = ''; 
                 } 
                 else if (filterType === 'today') {
                     centerTdContent = `<span style="font-size:12px;color:#7f8c8d;">${record.todayTime}</span>`;
