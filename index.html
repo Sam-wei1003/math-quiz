@@ -248,7 +248,7 @@
                         <tr>
                             <th width="10%" id="th-home-rank">名次</th>
                             <th width="28%" id="th-home-name">名字</th>
-                            <th width="36%" id="th-header-type">近7日打卡跡象 (右為今天)</th>
+                            <th width="36%" id="th-header-type">近7日練習足跡 (右為今天)</th>
                             <th width="13%" id="th-home-score">答對</th>
                             <th width="13%" id="th-home-rate">正確率</th>
                         </tr>
@@ -313,7 +313,7 @@
                         <tr>
                             <th width="10%" id="th-result-rank">名次</th>
                             <th width="28%" id="th-result-name">名字</th>
-                            <th width="36%" id="th-result-header-type">近7日打卡跡象</th>
+                            <th width="36%" id="th-result-header-type">近7日練習足跡</th>
                             <th width="13%" id="th-result-score">答對</th>
                             <th width="13%" id="th-result-rate">正確率</th>
                         </tr>
@@ -376,7 +376,7 @@
         const rateTh = document.getElementById(stage === 'home' ? 'th-home-rate' : 'th-result-rate');
 
         if (type === 'week') {
-            centerTh.innerText = "近7日打卡跡象 (右為今天)";
+            centerTh.innerText = "近7日練習足跡 (右為今天)";
             rateTh.style.display = 'none'; // 隱藏正確率欄位
             
             // 重新分配剩餘欄位的寬度比例
