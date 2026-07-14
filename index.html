@@ -333,7 +333,7 @@
     let timerInterval = null;
     let currentTabs = { home: 'week', result: 'week' };
 
-    // 解決一進入畫面沒隱藏正確率的問題：改為 onload 直接呼叫 switchTab，初始化版面佈局
+    // 解決一進入畫面沒隱藏正確率的問題
     window.onload = function() {
         switchTab('home', 'week');
         switchTab('result', 'week');
@@ -508,7 +508,6 @@
         updateScoreboard();
     }
 
-    // 歷史排行那, 累計次數拿掉 updateScoreboard
     function updateScoreboard() {
         document.getElementById('lbl-correct').innerText = currentData.correct;
         document.getElementById('lbl-total').innerText = currentData.total;
@@ -594,7 +593,8 @@
                         weekActiveDays: 0, weekTotalCorrect: 0,
                         dayRecords: {}
                     };
-                    past7Days.forEach(d => studentMap[name].dayRecords[d] = { correct: 0, total: 0 });
+                    // 初始化 7 日打卡容器，記錄每日答對題數、總答題數、以及「最重要的：當天嘗試挑戰次數 (存檔紀錄筆數)」
+                    past7Days.forEach(d => studentMap[name].dayRecords[d] = { correct: 0, total: 0, count: 0 });
                 }
 
                 let s = studentMap[name];
@@ -619,10 +619,11 @@
                     }
                 }
 
-                // 3. 近 7 日打卡累加
+                // 3. 近 7 日打卡累加與計數（count 代表該日期下，該學生的資料庫紀錄筆數）
                 if (s.dayRecords[datePart] !== undefined) {
                     s.dayRecords[datePart].correct += correct;
                     s.dayRecords[datePart].total += total;
+                    s.dayRecords[datePart].count += 1; // 累計該日練習次數 (筆數)
                 }
             });
 
@@ -659,7 +660,6 @@
             if (!tbody) return;
             tbody.innerHTML = '';
 
-            // 根據是否是週排行(week)動態調整 colspan 數量以配合 layout
             const currentColspan = filterType === 'week' ? 4 : 5;
             if (displayList.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="${currentColspan}">目前尚無相關紀錄</td></tr>`;
@@ -678,7 +678,6 @@
                 if (filterType === 'today') {
                     displayName += `<span class="count-badge">(今練 ${record.todayCount} 次)</span>`;
                 } 
-                // 【細節修改3】：已將 filterType === 'history' 的 (累計 X 次) 判斷拿掉，不再於名字後渲染它
 
                 if (filterType === 'week') {
                     let dotsHtml = '<div class="dot-container">';
@@ -686,14 +685,14 @@
                         let dayData = record.dayRecords[d];
                         let score = dayData.correct;
                         let total = dayData.total;
-                        // 【細節修改2】：動態算出當日的「答錯數量」
+                        let playCount = dayData.count; // 該日期底下的挑戰次數 (存檔筆數)
                         let wrong = Math.max(0, total - score);
                         let shortDate = d.substring(d.indexOf('/') + 1);
                         
                         if (score > 0) {
                             let dayRate = total === 0 ? 0 : Math.round((score / total) * 100);
-                            // 【細節修改2】：懸浮框文字中新增了「答錯數量」及「嘗試次數」
-                            dotsHtml += `<span class="dot active" data-tip="${shortDate}: 答對 ${score} 題, 答錯 ${wrong} 題 (嘗試 ${total} 次，正確率 ${dayRate}%)"></span>`;
+                            // 這裡的「嘗試次數」精準對應至當天該生「存檔的次數 (playCount)」
+                            dotsHtml += `<span class="dot active" data-tip="${shortDate}: 答對 ${score} 題, 答錯 ${wrong} 題 (嘗試 ${playCount} 次，正確率 ${dayRate}%)"></span>`;
                         } else {
                             dotsHtml += `<span class="dot" data-tip="${shortDate}: 未練習"></span>`;
                         }
