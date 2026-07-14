@@ -94,7 +94,7 @@
         .wrong { color: #c0392b; }
         .hint { font-size: 14px; color: #7f8c8d; margin-top: 10px; }
 
-        /* 排行榜 */
+        /* 排行榜外框 */
         .leaderboard {
             margin-top: 25px;
             text-align: left;
@@ -104,17 +104,35 @@
             border: 2px dashed #f1c40f;
         }
         .leaderboard h3 { margin-top: 0; color: #b7950b; text-align: center; font-size: 22px; margin-bottom: 10px;}
+        
+        /* 新增：滾動條容器控制，避免 100 名拉得太長 */
+        .leaderboard-scroll {
+            max-height: 350px; /* 固定高度，超過會出現滾動條 */
+            overflow-y: auto;  /* 開啟垂直滾動 */
+            border-radius: 6px;
+            background-color: #fffdf5;
+            padding: 5px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
         .rank-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 14px;
         }
+        /* 讓表格標頭固定在頂部，滾動時不消失 */
+        .rank-table th {
+            position: sticky;
+            top: 0;
+            background-color: #f9e79f;
+            color: #7d6608;
+            z-index: 10;
+        }
         .rank-table th, .rank-table td {
-            padding: 6px 4px;
+            padding: 8px 4px;
             text-align: center;
             border-bottom: 1px solid #f9e79f;
         }
-        .rank-table th { background-color: #f9e79f; color: #7d6608; }
         .top1 { font-weight: bold; color: #d4ac0d; background-color: #fef9e7; }
     </style>
 </head>
@@ -132,21 +150,23 @@
         <button onclick="startGame('contest')" class="btn-contest" style="font-size: 20px; padding: 12px 25px;">⏱️ 1分鐘限時挑戰賽</button>
 
         <div class="leaderboard">
-            <h3>🏆 頂尖對決：前 20 名排行榜</h3>
-            <table class="rank-table">
-                <thead>
-                    <tr>
-                        <th width="12%">名次</th>
-                        <th width="30%">名字</th>
-                        <th width="18%">答對</th>
-                        <th width="18%">正確率</th>
-                        <th width="22%">時間</th>
-                    </tr>
-                </thead>
-                <tbody id="home-leaderboard-body">
-                    <tr><td colspan="5">排行榜載入中...</td></tr>
-                </tbody>
-            </table>
+            <h3>🏆 頂尖對決：前 100 名排行榜</h3>
+            <div class="leaderboard-scroll">
+                <table class="rank-table">
+                    <thead>
+                        <tr>
+                            <th width="12%">名次</th>
+                            <th width="30%">名字</th>
+                            <th width="18%">答對</th>
+                            <th width="18%">正確率</th>
+                            <th width="22%">時間</th>
+                        </tr>
+                    </thead>
+                    <tbody id="home-leaderboard-body">
+                        <tr><td colspan="5">排行榜載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -155,7 +175,7 @@
         
         <div class="scoreboard">
             <div>參賽學生: <span id="lbl-name">-</span></div>
-            <div>目模式: <span id="lbl-mode" style="font-weight:bold; color:#2980b9;">-</span></div>
+            <div>目前模式: <span id="lbl-mode" style="font-weight:bold; color:#2980b9;">-</span></div>
             <div>答對題數: <span id="lbl-correct" style="color:#27ae60; font-weight:bold;">0</span> 題</div>
             <div id="wrong-box-title">答錯題數: <span id="lbl-wrong">0</span> 題</div>
             <div style="grid-column: span 2; text-align: center; font-weight: bold;">
@@ -186,21 +206,23 @@
         <button onclick="exitGame()" class="btn-basic">再挑戰一次 / 回主選單</button>
 
         <div class="leaderboard">
-            <h3>🏆 頂尖對決：前 20 名排行榜</h3>
-            <table class="rank-table">
-                <thead>
-                    <tr>
-                        <th width="12%">名次</th>
-                        <th width="30%">名字</th>
-                        <th width="18%">答對</th>
-                        <th width="18%">正確率</th>
-                        <th width="22%">時間</th>
-                    </tr>
-                </thead>
-                <tbody id="result-leaderboard-body">
-                    <tr><td colspan="5">排行榜載入中...</td></tr>
-                </tbody>
-            </table>
+            <h3>🏆 頂尖對決：前 100 名排行榜</h3>
+            <div class="leaderboard-scroll">
+                <table class="rank-table">
+                    <thead>
+                        <tr>
+                            <th width="12%">名次</th>
+                            <th width="30%">名字</th>
+                            <th width="18%">答對</th>
+                            <th width="18%">正確率</th>
+                            <th width="22%">時間</th>
+                        </tr>
+                    </thead>
+                    <tbody id="result-leaderboard-body">
+                        <tr><td colspan="5">排行榜載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -453,7 +475,7 @@
         });
     }
 
-    // 核心數據加載與精準排序邏輯
+    // 核心數據加載與精準排序邏輯 (已修改為前 100 名)
     function loadLeaderboardData(elementId) {
         if (!database) return;
         database.ref('contest_records').once('value', (snapshot) => {
@@ -461,7 +483,6 @@
             snapshot.forEach((childSnapshot) => {
                 let data = childSnapshot.val();
                 
-                // 動態防呆計算正確率（舊數據若無欄位也能相容）
                 let totalAns = data.total || data.correct || 1;
                 let calculatedRate = Math.round((data.correct / totalAns) * 100);
                 
@@ -490,7 +511,8 @@
                 return;
             }
 
-            allRecords.slice(0, 20).forEach((record, index) => {
+            // 【已修改】取出前 100 名
+            allRecords.slice(0, 100).forEach((record, index) => {
                 let rowClass = index === 0 ? 'class="top1"' : '';
                 let shortTime = record.time.replace(/^\d{4}\//, ""); 
 
@@ -518,7 +540,6 @@
             total: currentData.total,
             time: nowString
         }).then(() => {
-            // 資料儲存成功，立即刷新結算畫面排行榜
             loadLeaderboardData('result-leaderboard-body');
         });
     }
