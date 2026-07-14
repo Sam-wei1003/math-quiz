@@ -176,12 +176,16 @@
         .dot.active {
             background-color: #2ecc71;
         }
+        /* 1. 懸浮提示小卡片（改為向左側展開，利用左邊名字的空間） */
         .dot::after {
             content: attr(data-tip);
             position: absolute;
-            bottom: 130%;
-            left: 50%;
-            transform: translateX(-50%);
+            
+            /* 定位在圓點的左側，避開右邊邊界與上方頂部 */
+            right: 120%;
+            left: auto;
+            top: -10px;                /* 微調高度，讓它看起來更協調 */
+            
             background-color: rgba(44, 62, 80, 0.95);
             color: white;
             padding: 8px 12px;
@@ -189,20 +193,23 @@
             line-height: 1.5;
             border-radius: 6px;
             
-            /* === 解決排版壞掉的關鍵修正 === */
-            white-space: pre;          /* 完美保留 \n 的換行，且絕不自動壓縮字體 */
-            min-width: 220px;          /* 給予最低寬度保護，防止文字擠壓 */
-            width: max-content;        /* 依文字長度自動撐開最舒適的寬度 */
+            /* 換行與寬度保護 */
+            white-space: pre-wrap;     /* 保留 \n 換行 */
+            min-width: 210px;          /* 限制最小寬度 */
+            width: max-content;        /* 依文字長度自動撐開 */
             
-            text-align: left;          /* 文字靠左對齊，排版更優美 */
+            text-align: left;          /* 文字靠左對齊 */
             box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-            opacity: 0;
-            pointer-events: none;
+            opacity: 0;                /* 預設隱藏 */
+            pointer-events: none;      /* 防止滑鼠卡到懸浮框 */
             transition: opacity 0.1s;
             z-index: 99;
         }
+
+        /* 2. 控制滑鼠劃過去時顯示 */
         .dot:hover::after {
-            opacity: 1;
+            opacity: 1 !important;
+        
         }
         
         .count-badge {
