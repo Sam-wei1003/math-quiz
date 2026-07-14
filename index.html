@@ -63,6 +63,8 @@
         .btn-submit:hover { background-color: #219653; }
         .btn-nav { background-color: #95a5a6; }
         .btn-nav:hover { background-color: #7f8c8d; }
+        .btn-again { background-color: #27ae60; font-weight: bold; }
+        .btn-again:hover { background-color: #219653; }
         
         /* 倒數計時器 */
         .timer-box {
@@ -201,7 +203,9 @@
             <div>嘗試總次數: <span id="final-total">0</span> 次</div>
             <div>最終正確率: <span id="final-rate">0</span>%</div>
         </div>
-        <button onclick="exitGame()" class="btn-basic">再挑戰一次 / 回主選單</button>
+        
+        <button onclick="restartGame()" class="btn-again">🔥 再挑戰一次 (名字免重打)</button>
+        <button onclick="exitGame()" class="btn-nav">🏠 返回主選單</button>
 
         <div class="leaderboard">
             <h3>🏆 頂尖對決：前 500 名排行榜</h3>
@@ -226,7 +230,7 @@
 </div>
 
 <script>
-    // Firebase 金鑰配置 (已自動綁定)
+    // Firebase 金鑰配置 
     const firebaseConfig = {
         apiKey: "AIzaSyBVsWn1_ejMdHsqsYLkaDQHYXyraDeQD_U",
         authDomain: "math-quiz-f0e5b.firebaseapp.com",
@@ -255,6 +259,7 @@
         loadLeaderboardData('home-leaderboard-body');
     };
 
+    // 啟動遊戲的統一核心邏輯
     function startGame(mode) {
         const nameInput = document.getElementById('username').value.trim();
         if (!nameInput) {
@@ -264,6 +269,20 @@
         
         currentData.name = nameInput;
         currentData.mode = mode;
+        executeStart();
+    }
+
+    // 【新增】直接使用現有名字與模式再次挑戰
+    function restartGame() {
+        if (!currentData.name) {
+            exitGame();
+            return;
+        }
+        executeStart();
+    }
+
+    // 執行初始化畫面與出題
+    function executeStart() {
         currentData.total = 0;
         currentData.correct = 0;
         currentData.wrong = 0;
@@ -271,11 +290,11 @@
 
         document.getElementById('lbl-name').innerText = currentData.name;
         let modeTitle = '基礎練習';
-        if(mode === 'advanced') modeTitle = '進階練習';
-        if(mode === 'contest') modeTitle = '⏱️ 1分鐘競賽';
+        if(currentData.mode === 'advanced') modeTitle = '進階練習';
+        if(currentData.mode === 'contest') modeTitle = '⏱️ 1分鐘競賽';
         document.getElementById('lbl-mode').innerText = modeTitle;
 
-        if (mode === 'contest') {
+        if (currentData.mode === 'contest') {
             document.getElementById('timer-wrapper').classList.remove('hidden');
             document.getElementById('wrong-box-title').innerHTML = `嘗試次數: <span id="lbl-wrong">0</span> 次`;
             timeLeft = 60;
@@ -293,7 +312,7 @@
         
         generateQuestion();
 
-        if (mode === 'contest') {
+        if (currentData.mode === 'contest') {
             clearInterval(timerInterval);
             timerInterval = setInterval(() => {
                 timeLeft--;
@@ -315,11 +334,8 @@
     function getRandomOp() { return Math.random() < 0.5 ? '+' : '-'; }
     function formatNum(num) { return num < 0 ? `(${num})` : num; }
 
-    // 【核心邏輯升級】檢查是否屬於小學簡單題目（正+正 或 大-小）
     function isSimpleQuiz(n1, op, n2) {
-        // 情況 1：正數 + 正數
         if (op === '+' && n1 > 0 && n2 > 0) return true;
-        // 情況 2：大數 - 小數 (兩數皆正 且 前面大於後面)
         if (op === '-' && n1 > 0 && n2 > 0 && n1 > n2) return true;
         return false;
     }
@@ -339,7 +355,6 @@
         let qText = '';
         if (currentData.mode === 'basic' || currentData.mode === 'contest') {
             let n1, n2, op;
-            // 迴圈抽取直到「不屬於簡單題目」為止
             do {
                 n1 = getRandomNumWithoutZero();
                 n2 = getRandomNumWithoutZero();
@@ -351,7 +366,6 @@
         } 
         else if (currentData.mode === 'advanced') {
             let n1, n2, n3, op1, op2, temp;
-            // 確保第一步和第二步運算都不是簡單題型
             do {
                 n1 = getRandomNumWithoutZero();
                 n2 = getRandomNumWithoutZero();
@@ -360,7 +374,6 @@
             
             temp = op1 === '+' ? n1 + n2 : n1 - n2;
 
-            // 如果運算中途 temp 剛好等於 0，重新抽取 n3 直到它不為 0
             do {
                 n3 = getRandomNumWithoutZero();
                 op2 = getRandomOp();
@@ -427,7 +440,6 @@
         updateScoreboard();
     }
 
-    style="text-align: center;"
     function updateScoreboard() {
         document.getElementById('lbl-correct').innerText = currentData.correct;
         document.getElementById('lbl-total').innerText = currentData.total;
@@ -478,6 +490,7 @@
         loadLeaderboardData('home-leaderboard-body');
     }
 
+    // 【修正】移除原先未定義的 saveDataHTML5 錯誤呼叫，完全走 Firebase 雲端儲存
     function savePracticeData() {
         if (!database) return;
         let rate = Math.round((currentData.correct / currentData.total) * 100);
@@ -527,7 +540,6 @@
                 return;
             }
 
-            // 【已修改】順利取前 500 名
             allRecords.slice(0, 500).forEach((record, index) => {
                 let rowClass = index === 0 ? 'class="top1"' : '';
                 let shortTime = record.time.replace(/^\d{4}\//, ""); 
