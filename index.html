@@ -188,23 +188,18 @@
             font-size: 11px;
             line-height: 1.5;
             border-radius: 6px;
-            white-space: pre-line; /* 支援多行文字換行 */
-            text-align: left;     /* 文字靠左對齊，排版更優美 */
+            
+            /* === 解決排版壞掉的關鍵修正 === */
+            white-space: pre;          /* 完美保留 \n 的換行，且絕不自動壓縮字體 */
+            min-width: 220px;          /* 給予最低寬度保護，防止文字擠壓 */
+            width: max-content;        /* 依文字長度自動撐開最舒適的寬度 */
+            
+            text-align: left;          /* 文字靠左對齊，排版更優美 */
             box-shadow: 0 4px 10px rgba(0,0,0,0.25);
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.1s;
             z-index: 99;
-        }
-        .dot:hover::after {
-            opacity: 1;
-        }
-        
-        .count-badge {
-            font-size: 11px;
-            color: #888;
-            font-weight: normal;
-            margin-left: 4px;
         }
     </style>
 </head>
