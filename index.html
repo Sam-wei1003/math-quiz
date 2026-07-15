@@ -34,13 +34,6 @@
         .wrong { color: #c0392b; }
         .hint { font-size: 14px; color: #7f8c8d; margin-top: 10px; text-decoration: underline; cursor: pointer; }
         
-        /* 勳章櫃 */
-        .badge-cabinet { margin-top: 25px; padding: 15px; background: #fffdf5; border-radius: 10px; border: 1px solid #f1c40f; }
-        .badge-cabinet h3 { margin: 0 0 10px 0; font-size: 18px; color: #d35400; }
-        .badge-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 30px; }
-        .badge { padding: 5px 10px; border-radius: 15px; background: #f1c40f; color: #fff; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .badge-empty { color: #bdc3c7; font-size: 14px; margin-top: 5px; }
-
         /* 排行榜 */
         .leaderboard { margin-top: 25px; text-align: left; background-color: #fcf3cf; padding: 15px; border-radius: 8px; border: 2px dashed #f1c40f; }
         .tab-container { display: flex; justify-content: center; margin-bottom: 12px; gap: 5px; }
@@ -69,11 +62,6 @@
         <button onclick="startGame('basic')" class="btn-basic">基礎</button>
         <button onclick="startGame('advanced')" class="btn-advance">進階</button>
         <button onclick="startGame('contest')" class="btn-contest">⏱️ 1分鐘挑戰</button>
-
-        <div class="badge-cabinet">
-            <h3>🏆 我的榮譽勳章</h3>
-            <div id="badge-list" class="badge-list"></div>
-        </div>
 
         <div class="leaderboard">
             <div class="tab-container">
@@ -119,7 +107,7 @@
 </div>
 
 <script>
-    // 1. 初始化 Firebase (請確認這是您專案的正確設定)
+    // 1. 初始化 Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyBVsWn1_ejMdHsqsYLkaDQHYXyraDeQD_U",
         databaseURL: "https://math-quiz-f0e5b-default-rtdb.firebaseio.com",
@@ -141,71 +129,8 @@
 
     // 3. 初始載入
     window.onload = () => {
-        renderBadges();
         switchTab('week');
     };
-
-    // ==========================================
-    // 徽章系統邏輯 (LocalStorage)
-    // ==========================================
-    function renderBadges() {
-        let myBadges = JSON.parse(localStorage.getItem('myBadges') || '[]');
-        const badgeList = document.getElementById('badge-list');
-        if (myBadges.length === 0) {
-            badgeList.innerHTML = '<span class="badge-empty">尚未獲得徽章，快去練習吧！</span>';
-        } else {
-            badgeList.innerHTML = myBadges.map(b => `<span class="badge">${b}</span>`).join('');
-        }
-    }
-
-    function updateStatsAndCheckBadges(addedCorrect, isContestPerfect) {
-        let stats = JSON.parse(localStorage.getItem('myStats') || '{"totalCorrect": 0, "streak": 0, "lastDate": ""}');
-        let myBadges = JSON.parse(localStorage.getItem('myBadges') || '[]');
-        let newlyUnlocked = false;
-
-        // 更新總答對題數
-        stats.totalCorrect += addedCorrect;
-
-        // 更新連續天數
-        let todayStr = new Date().toLocaleDateString('zh-TW');
-        if (stats.lastDate !== todayStr) {
-            let yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            let yesterdayStr = yesterday.toLocaleDateString('zh-TW');
-
-            if (stats.lastDate === yesterdayStr) {
-                stats.streak += 1;
-            } else {
-                stats.streak = 1; // 重新計算
-            }
-            stats.lastDate = todayStr;
-        }
-
-        localStorage.setItem('myStats', JSON.stringify(stats));
-
-        // 檢查累積題數徽章
-        const milestones = [100, 200, 500, 1000, 2000, 5000, 10000];
-        milestones.forEach(m => {
-            if (stats.totalCorrect >= m && !myBadges.includes(`累計${m}題`)) {
-                myBadges.push(`累計${m}題`);
-                newlyUnlocked = true;
-            }
-        });
-
-        // 檢查天數徽章
-        if (stats.streak >= 3 && !myBadges.includes('連續3天')) { myBadges.push('連續3天'); newlyUnlocked = true; }
-        if (stats.streak >= 7 && !myBadges.includes('連續7天')) { myBadges.push('連續7天'); newlyUnlocked = true; }
-
-        // 檢查挑戰滿分徽章
-        if (isContestPerfect && !myBadges.includes('挑戰滿分')) { myBadges.push('挑戰滿分'); newlyUnlocked = true; }
-
-        if (newlyUnlocked) {
-            localStorage.setItem('myBadges', JSON.stringify(myBadges));
-            renderBadges();
-            // 延遲跳出提醒，避免打斷作答手感
-            setTimeout(() => alert('🏆 恭喜您解鎖了新勳章！請至主選單的勳章櫃查看。'), 500);
-        }
-    }
 
     // ==========================================
     // 遊戲流程控制
@@ -256,7 +181,7 @@
         let num2 = Math.floor(Math.random() * (max * 2 + 1)) - max;
         let op = Math.random() > 0.5 ? '+' : '-';
         
-        if(num1 === 0 && num2 === 0) num1 = 1; // 避免 0+0
+        if(num1 === 0 && num2 === 0) num1 = 1; 
 
         let strNum2 = num2 < 0 ? `(${num2})` : num2;
         document.getElementById('question-text').innerText = `${num1} ${op} ${strNum2} = ?`;
@@ -295,14 +220,13 @@
                 }, 1500);
             } else {
                 generateQuestion();
-                return; // 挑戰模式答對直接下一題，不秀提示
+                return;
             }
         } else {
             fbText.innerText = `❌ 答錯了！正確答案是 ${currentAnswer}`;
             fbText.className = 'feedback wrong';
         }
 
-        // 如果是練習模式，顯示手動下一題的提示
         if (currentData.mode !== 'contest') {
             spaceHint.classList.remove('hidden');
             checkPracticeBuffer();
@@ -310,10 +234,8 @@
     }
 
     function checkPracticeBuffer() {
-        // 基礎/進階模式，每答 10 題自動存檔一次
         if (practiceBuffer.total >= 10) {
             saveToFirebase(false);
-            updateStatsAndCheckBadges(practiceBuffer.correct, false);
             practiceBuffer = { total: 0, correct: 0 };
         }
     }
@@ -334,9 +256,7 @@
         document.getElementById('feedback-text').className = 'feedback';
         document.getElementById('space-hint').classList.add('hidden');
         
-        let isPerfect = (currentData.total >= 10 && currentData.correct === currentData.total);
         saveToFirebase(true);
-        updateStatsAndCheckBadges(currentData.correct, isPerfect);
         
         setTimeout(() => {
             alert(`挑戰結束！\n總共作答: ${currentData.total} 題\n答對: ${currentData.correct} 題`);
@@ -348,7 +268,7 @@
         let correctToSave = isContest ? currentData.correct : practiceBuffer.correct;
         let totalToSave = isContest ? currentData.total : practiceBuffer.total;
         
-        if (totalToSave === 0) return; // 沒答題不存
+        if (totalToSave === 0) return;
 
         const now = new Date();
         const record = {
@@ -365,7 +285,6 @@
     function exitGame() {
         if (currentData.mode !== 'contest' && practiceBuffer.total > 0) {
             saveToFirebase(false);
-            updateStatsAndCheckBadges(practiceBuffer.correct, false);
         }
         location.reload();
     }
@@ -379,7 +298,7 @@
 
     window.addEventListener('keydown', function(e) {
         if (e.code === 'Space' && isWaitingForNext && !document.getElementById('quiz-stage').classList.contains('hidden')) {
-            e.preventDefault(); // 避免畫面捲動
+            e.preventDefault();
             generateQuestion();
         }
     });
@@ -425,14 +344,12 @@
                     
                     aggregated[name].totalCorrect += record.correct;
                     
-                    // 利用 sessionId 精準計算次數
                     if (record.sessionId) {
                         aggregated[name].sessions.add(record.sessionId);
                     } else {
                         aggregated[name].sessions.add(record.time);
                     }
 
-                    // 足跡計算
                     if (type === 'week') {
                         let recordDateZero = new Date(recordTime);
                         recordDateZero.setHours(0,0,0,0);
