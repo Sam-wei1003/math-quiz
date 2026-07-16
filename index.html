@@ -52,6 +52,8 @@
             transition: 0.2s;
             margin: 5px;
         }
+        .btn-login { background-color: #2ecc71; font-weight: bold; font-size: 20px; padding: 12px 30px; }
+        .btn-login:hover { background-color: #27ae60; }
         .btn-basic { background-color: #3498db; }
         .btn-basic:hover { background-color: #2980b9; }
         .btn-advance { background-color: #9b59b6; }
@@ -62,9 +64,46 @@
         .btn-submit:hover { background-color: #219653; }
         .btn-nav { background-color: #95a5a6; }
         .btn-nav:hover { background-color: #7f8c8d; }
+        .btn-logout { background-color: #bdc3c7; color: #333; font-size: 14px; padding: 5px 10px; margin-top: 10px; }
+        .btn-logout:hover { background-color: #95a5a6; }
         .btn-again { background-color: #27ae60; font-weight: bold; }
         .btn-again:hover { background-color: #219653; }
         
+        /* 大廳歡迎樣式 */
+        .lobby-welcome {
+            background-color: #ebf5fb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 5px solid #3498db;
+            text-align: left;
+        }
+        .lobby-welcome h3 { margin: 0 0 8px 0; color: #2c3e50; font-size: 18px; }
+        .lobby-welcome p { margin: 4px 0; color: #566573; font-size: 15px; font-weight: bold; }
+
+        /* 模式選擇卡片 */
+        .mode-selection {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .mode-card {
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: 0.2s;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .mode-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        .card-basic { background-color: #3498db; }
+        .card-advance { background-color: #9b59b6; }
+        .card-contest { background-color: #e74c3c; border: 2px dashed #f1c40f; }
+
         .timer-box {
             font-size: 26px;
             font-weight: bold;
@@ -179,37 +218,30 @@
             background-color: #2ecc71;
         }
 
-        /* 1. 懸浮提示小卡片（改為向左側展開，利用左邊名字的空間） */
+        /* 懸浮提示小卡片 */
         .dot::after {
             content: attr(data-tip);
             position: absolute;
-            
-            /* 定位在圓點的左側，避開右邊邊界與上方頂部 */
             right: 120%;
             left: auto;
-            top: -10px;                /* 微調高度，讓它看起來更協調 */
-            
+            top: -10px;
             background-color: rgba(44, 62, 80, 0.95);
             color: white;
             padding: 8px 12px;
             font-size: 11px;
             line-height: 1.5;
             border-radius: 6px;
-            
-            /* 換行與寬度保護 */
-            white-space: pre-wrap;     /* 保留 \n 換行 */
-            min-width: 210px;          /* 限制最小寬度 */
-            width: max-content;        /* 依文字長度自動撐開 */
-            
-            text-align: left;          /* 文字靠左對齊 */
+            white-space: pre-wrap;
+            min-width: 210px;
+            width: max-content;
+            text-align: left;
             box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-            opacity: 0;                /* 預設隱藏 */
-            pointer-events: none;      /* 防止滑鼠卡到懸浮框 */
+            opacity: 0;
+            pointer-events: none;
             transition: opacity 0.1s;
             z-index: 99;
         }
 
-        /* 2. 控制滑鼠劃過去時顯示 */
         .dot:hover::after {
             opacity: 1 !important;
         }
@@ -227,13 +259,30 @@
 <div class="container">
     <div id="login-stage">
         <h1>正負數加減法練習</h1>
-        <h2>請輸入名字並選擇模式：</h2>
+        <h2 style="margin-bottom: 25px;">請輸入名字以進入修練場：</h2>
         <input type="text" id="username" placeholder="請輸入你的名字" autofocus autocomplete="off">
         <br>
-        <button onclick="startGame('basic')" class="btn-basic">基礎練習 (不限時/2個數)</button>
-        <button onclick="startGame('advanced')" class="btn-advance">進階練習 (不限時/3個數)</button>
-        <hr style="border: 0; border-top: 1px dashed #bdc3c7; margin: 20px 0;">
-        <button onclick="startGame('contest')" class="btn-contest" style="font-size: 20px; padding: 12px 25px;">⏱️ 1分鐘限時挑戰賽</button>
+        <button onclick="handleLogin()" class="btn-login">進入修練場 🚀</button>
+    </div>
+
+    <div id="lobby-stage" class="hidden">
+        <div class="lobby-welcome">
+            <h3 id="lobby-welcome-text">👋 哈囉，- ！今天想挑戰哪一個模式？</h3>
+            <p id="lobby-today-count">⏱️ 今日挑戰次數：0 次</p>
+            <p id="lobby-today-basic">📘 今日基礎答對：0 題</p>
+            <p id="lobby-today-advance">📗 今日進階答對：0 題</p>
+        </div>
+
+        <div id="badge-stage-placeholder" class="hidden">
+            </div>
+
+        <div class="mode-selection">
+            <div onclick="startGame('basic')" class="mode-card card-basic">🟢 基礎練習 (不限時/2個數)</div>
+            <div onclick="startGame('advanced')" class="mode-card card-advance">🟣 進階練習 (不限時/3個數)</div>
+            <div onclick="startGame('contest')" class="mode-card card-contest">⏱️ 1分鐘限時挑戰賽</div>
+        </div>
+
+        <button onclick="logout()" class="btn-logout">更换帳號 👤</button>
 
         <div class="leaderboard">
             <div class="tab-container">
@@ -284,7 +333,7 @@
                 請按 【空白鍵 Space】 (手機【點擊此處】 進入下一題)
             </div>
         </div>
-        <button onclick="exitGame()" class="btn-nav" style="margin-top:15px;">返回主選單</button>
+        <button onclick="exitGame()" class="btn-nav" style="margin-top:15px;">返回大廳</button>
     </div>
 
     <div id="result-stage" class="hidden">
@@ -298,7 +347,7 @@
         </div>
         
         <button onclick="restartGame()" class="btn-again">🔥 再挑戰一次 (名字免重打)</button>
-        <button onclick="exitGame()" class="btn-nav">🏠 返回主選單</button>
+        <button onclick="exitGame()" class="btn-nav">🏠 返回大廳</button>
 
         <div class="leaderboard">
             <div class="tab-container">
@@ -358,9 +407,42 @@
     let currentSessionId = "";
 
     window.onload = function() {
+        // 初始化載入排行榜
         switchTab('home', 'week');
         switchTab('result', 'week');
     };
+
+    // 登入處理
+    function handleLogin() {
+        const nameInput = document.getElementById('username').value.trim();
+        if (!nameInput) { alert('請先輸入名字喔！'); return; }
+        
+        currentData.name = nameInput;
+        
+        // 切換到大廳畫面
+        document.getElementById('login-stage').classList.add('hidden');
+        document.getElementById('lobby-stage').classList.remove('hidden');
+        
+        // 更新大廳頂部文字
+        document.getElementById('lobby-welcome-text').innerText = `👋 哈囉，${currentData.name}！今天想挑戰哪一個模式？`;
+        
+        // 預設先更新畫面為載入中
+        document.getElementById('lobby-today-count').innerText = `⏱️ 今日挑戰次數：讀取中...`;
+        document.getElementById('lobby-today-basic').innerText = `📘 今日基礎答對：讀取中...`;
+        document.getElementById('lobby-today-advance').innerText = `📗 今日進階答對：讀取中...`;
+        
+        // 直接觸發載入排行榜與今日數據的統計
+        switchTab('home', currentTabs['home']);
+    }
+
+    // 登出/更换帳號
+    function logout() {
+        currentData.name = '';
+        document.getElementById('username').value = '';
+        document.getElementById('lobby-stage').classList.add('hidden');
+        document.getElementById('login-stage').classList.remove('hidden');
+        document.getElementById('username').focus();
+    }
 
     // 切換分頁時，動態顯示/隱藏「正確率」欄位並重新規劃比例
     function switchTab(stage, type) {
@@ -398,9 +480,7 @@
     }
 
     function startGame(mode) {
-        const nameInput = document.getElementById('username').value.trim();
-        if (!nameInput) { alert('請先輸入名字喔！'); return; }
-        currentData.name = nameInput;
+        if (!currentData.name) { alert('請重新登入！'); logout(); return; }
         currentData.mode = mode;
         executeStart();
     }
@@ -440,7 +520,7 @@
         }
 
         updateScoreboard();
-        document.getElementById('login-stage').classList.add('hidden');
+        document.getElementById('lobby-stage').classList.add('hidden'); // 隱藏大廳
         document.getElementById('result-stage').classList.add('hidden');
         document.getElementById('quiz-stage').classList.remove('hidden');
         generateQuestion();
@@ -607,9 +687,10 @@
 
         document.getElementById('quiz-stage').classList.add('hidden');
         document.getElementById('result-stage').classList.add('hidden');
-        document.getElementById('login-stage').classList.remove('hidden');
-        document.getElementById('username').value = '';
-        switchTab('home', 'week');
+        document.getElementById('lobby-stage').classList.remove('hidden'); // 返回大廳而非登入頁面
+        
+        // 回到大廳時，重新撈取一次統計數據，確保次數與排行榜同步更新
+        switchTab('home', currentTabs['home']);
     }
 
     function getPast7Days() {
@@ -712,6 +793,28 @@
                     }
                 }
             });
+
+            // 即時更新當前登入學生的「今日挑戰次數」和「今日基礎/進階答對題數」
+            if (currentData.name) {
+                const currentStudentData = studentMap[currentData.name.trim()];
+                
+                let todayCount = 0;
+                let todayBasicCorrect = 0;
+                let todayAdvanceCorrect = 0;
+
+                if (currentStudentData) {
+                    todayCount = currentStudentData.todayCount;
+                    // 抓取今天日期在天紀錄中的基礎與進階答對數據
+                    if (currentStudentData.dayRecords[todayStr]) {
+                        todayBasicCorrect = currentStudentData.dayRecords[todayStr].basic.correct;
+                        todayAdvanceCorrect = currentStudentData.dayRecords[todayStr].advanced.correct;
+                    }
+                }
+                
+                document.getElementById('lobby-today-count').innerText = `⏱️ 今日挑戰次數：${todayCount} 次`;
+                document.getElementById('lobby-today-basic').innerText = `📘 今日基礎答對：${todayBasicCorrect} 題`;
+                document.getElementById('lobby-today-advance').innerText = `📗 今日進階答對：${todayAdvanceCorrect} 題`;
+            }
 
             let allStudents = Object.values(studentMap);
             allStudents.forEach(s => {
@@ -845,6 +948,7 @@
         });
     }
 
+    // 挑戰賽結束存檔
     function saveContestDataAndLoadLeaderboard() {
         if (!database) return;
         const timestamp = new Date().getTime();
