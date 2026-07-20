@@ -632,7 +632,7 @@
         executeStart();
     }
 
-    function executeStart() {
+function executeStart() {
         currentData.total = 0;
         currentData.correct = 0;
         currentData.wrong = 0;
@@ -649,11 +649,13 @@
         if(currentData.mode === 'contest') modeTitle = '⏱️ 1分鐘競賽';
         document.getElementById('lbl-mode').innerText = modeTitle;
 
+        // 先把舊的計時器清掉，避免重複疊加
+        clearInterval(timerInterval);
+
         if (currentData.mode === 'contest') {
             document.getElementById('timer-wrapper').classList.remove('hidden');
             document.getElementById('wrong-box-title').innerHTML = `嘗試次數: <span id="lbl-wrong">0</span> 次`;
-            timeLeft = 60;
-            document.getElementById('timer-sec').innerText = timeLeft;
+            document.getElementById('timer-sec').innerText = "60"; // 先預設顯示 60
         } else {
             document.getElementById('timer-wrapper').classList.add('hidden');
             document.getElementById('wrong-box-title').innerHTML = `答錯題數: <span id="lbl-wrong">0</span> 題`;
@@ -663,18 +665,58 @@
         document.getElementById('lobby-stage').classList.add('hidden');
         document.getElementById('result-stage').classList.add('hidden');
         document.getElementById('quiz-stage').classList.remove('hidden');
-        generateQuestion();
 
+        // 判斷模式：挑戰模式進入倒數流程，一般模式直接出題
         if (currentData.mode === 'contest') {
-            clearInterval(timerInterval);
+            // 1. 鎖定輸入框與按鈕，不讓學生偷跑
+            document.getElementById('user-answer').disabled = true;
+            document.getElementById('btn-submit').disabled = true;
+            document.getElementById('user-answer').placeholder = "等待倒數結束...";
+
+            // 2. 開始準備倒數 3 秒
+            let prepareTime = 3;
+            document.getElementById('question-text').innerText = `預備... ${prepareTime}`;
+            document.getElementById('question-text').style.color = '#e67e22'; // 變成橘色比較醒目
+
             timerInterval = setInterval(() => {
-                timeLeft--;
-                document.getElementById('timer-sec').innerText = timeLeft;
-                if (timeLeft <= 0) { clearInterval(timerInterval); endContest(); }
+                prepareTime--;
+                if (prepareTime > 0) {
+                    document.getElementById('question-text').innerText = `預備... ${prepareTime}`;
+                } else {
+                    // 3. 準備結束，解除鎖定並正式出第一題
+                    clearInterval(timerInterval);
+                    document.getElementById('question-text').style.color = '#2c3e50'; // 恢復原本字體顏色
+                    document.getElementById('user-answer').disabled = false;
+                    document.getElementById('btn-submit').disabled = false;
+                    document.getElementById('user-answer').placeholder = "請輸入答案";
+                    document.getElementById('user-answer').focus(); // 自動聚焦方便直接打字
+                    
+                    generateQuestion(); // 正式出題
+
+                    // 4. 啟動核心 60 秒競賽計時器
+                    timeLeft = 60;
+                    document.getElementById('timer-sec').innerText = timeLeft;
+                    
+                    timerInterval = setInterval(() => {
+                        timeLeft--;
+                        document.getElementById('timer-sec').innerText = timeLeft;
+                        if (timeLeft <= 0) { 
+                            clearInterval(timerInterval); 
+                            endContest(); 
+                        }
+                    }, 1000);
+                }
             }, 1000);
+
+        } else {
+            // 基礎與進階模式：直接出題，不鎖定
+            document.getElementById('user-answer').disabled = false;
+            document.getElementById('btn-submit').disabled = false;
+            document.getElementById('user-answer').placeholder = "請輸入答案";
+            document.getElementById('question-text').style.color = '#2c3e50';
+            generateQuestion();
         }
     }
-
     function getRandomNumWithoutZero() {
         let num = 0;
         while (num === 0) { num = Math.floor(Math.random() * 21) - 10; }
@@ -753,7 +795,7 @@
                     savePracticeBatch();
                 }
 
-                setTimeout(() => { if(isWaitingForNext) generateQuestion(); }, 2000);
+                setTimeout(() => { if(isWaitingForNext) generateQuestion(); }, 800);
             } else {
                 currentData.wrong++;
                 feedbackEl.innerText = `❌ 答錯囉！正確答案是：${currentAnswer}`;
