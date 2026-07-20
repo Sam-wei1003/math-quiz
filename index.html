@@ -65,8 +65,6 @@
         .btn-submit:hover { background-color: #219653; }
         .btn-nav { background-color: #95a5a6; }
         .btn-nav:hover { background-color: #7f8c8d; }
-        .btn-logout { background-color: #e74c3c; font-weight: bold; font-size: 14px; padding: 4px 10px; margin-top: 5px; display: inline-block; cursor: pointer; border-radius: 4px; color: white; }
-        .btn-logout:hover { background-color: #c0392b; }
         .btn-again { background-color: #27ae60; font-weight: bold; }
         .btn-again:hover { background-color: #219653; }
         
@@ -78,11 +76,9 @@
             margin-bottom: 15px;
             border-left: 5px solid #3498db;
             text-align: left;
-            position: relative;
         }
         .lobby-welcome h3 { margin: 0 0 8px 0; color: #2c3e50; font-size: 18px; }
         .lobby-welcome p { margin: 4px 0; color: #566573; font-size: 15px; font-weight: bold; }
-        .logout-container { text-align: right; margin-top: -5px; }
 
         /* 🏆 徽章展示牆樣式 */
         .badge-wall {
@@ -369,12 +365,9 @@
             <p id="lobby-today-count">⏱️ 今日挑戰次數：0 次</p>
             <p id="lobby-today-basic">📘 今日基礎答對：0 題</p>
             <p id="lobby-today-advance">📗 今日進階答對：0 題</p>
-            <div class="logout-container">
-                <span onclick="logout()" class="btn-logout">更換帳號 🔄</span>
-            </div>
         </div>
 
-        <!-- 🏆 9 大歷史永久徽章展示牆 (初出、熟能已修正為歷史總計) -->
+        <!-- 🏆 9 大歷史永久徽章展示牆 -->
         <div id="badge-stage-placeholder" class="badge-wall">
             <div class="badge-wall-title">🏆 你的成就徽章牆</div>
             <div class="badge-container">
@@ -576,14 +569,6 @@
         switchTab('home', currentTabs['home']);
     }
 
-    function logout() {
-        currentData.name = '';
-        document.getElementById('username').value = '';
-        document.getElementById('lobby-stage').classList.add('hidden');
-        document.getElementById('login-stage').classList.remove('hidden');
-        document.getElementById('username').focus();
-    }
-
     function switchTab(stage, type) {
         currentTabs[stage] = type;
         document.getElementById(`tab-${stage}-week`).classList.remove('active');
@@ -615,7 +600,7 @@
     }
 
     function startGame(mode) {
-        if (!currentData.name) { alert('請重新登入！'); logout(); return; }
+        if (!currentData.name) { alert('請重新輸入名字！'); return; }
         currentData.mode = mode;
         executeStart();
     }
@@ -876,7 +861,7 @@
                         name: name,
                         historyMaxCorrect: 0, totalAnsOfMax: 0, maxRate: 0, maxTime: '',
                         historyTotalCount: 0,
-                        historyTotalCorrect: 0, // 👈 累計一輩子全模式總答對題數
+                        historyTotalCorrect: 0, 
                         todayMaxCorrect: 0, todayTotalAns: 0, todayRate: 0, todayTime: '',
                         todayCount: 0, weekActiveDays: 0, weekTotalCorrect: 0,
                         dayRecords: {}, allDaysMap: {}
@@ -893,7 +878,6 @@
 
                 let s = studentMap[name];
                 
-                // 累計歷史永久總答對
                 s.historyTotalCorrect += correct;
 
                 if (datePart) {
@@ -959,7 +943,6 @@
                 let hasSniper = false, greenDotsCount = 0, historyMaxCorrect = 0, hasHistoryPerfect = false;
                 let sniperBestTotal = 0, sniperBestRate = 0;
                 
-                // 取得永久歷史總答對題數
                 let globalTotalCorrect = sData ? sData.historyTotalCorrect : 0;
 
                 if (sData) {
@@ -987,14 +970,14 @@
                 document.getElementById('lobby-today-basic').innerText = `📘 今日基礎答對：${todayBasicCorrect} 題`;
                 document.getElementById('lobby-today-advance').innerText = `📗 今日進階答對：${todayAdvanceCorrect} 題`;
 
-                // 1. 🥚 初出茅廬 (修正為：歷史全模式永久總計滿 10 題)
+                // 1. 🥚 初出茅廬
                 const badgeNovice = document.getElementById('badge-novice');
                 const progNovice = document.getElementById('badge-progress-novice');
                 if (globalTotalCorrect >= 10) { badgeNovice.className = "badge-item unlocked"; progNovice.innerText = "已達成! 🎉"; } 
                 else { badgeNovice.className = "badge-item"; progNovice.innerText = `${globalTotalCorrect}/10`; }
                 badgeNovice.setAttribute('data-tip', `條件：歷史全模式永久總計答對滿 10 題\n目前個人歷史永久總計：${globalTotalCorrect} 題`);
 
-                // 2. 🔥 熟能生巧 (修正為：歷史全模式永久總計滿 100/300/1000/2500/5000 題)
+                // 2. 🔥 熟能生巧
                 const badgeMaster = document.getElementById('badge-master');
                 const nameMaster = document.getElementById('badge-name-master');
                 const progMaster = document.getElementById('badge-progress-master');
