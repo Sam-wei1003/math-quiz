@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>正負數加減法綜合練習場</title>
     
+    <!-- 引入 Firebase 核心 SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -433,7 +434,6 @@
             <div onclick="startGame('contest')" class="mode-card card-contest">⏱️ 1分鐘限時挑戰賽</div>
         </div>
 
-        
         <!-- 排行榜在大廳最下方 -->
         <div class="leaderboard">
             <div class="tab-container">
@@ -631,7 +631,7 @@
         executeStart();
     }
 
-function executeStart() {
+    function executeStart() {
         currentData.total = 0;
         currentData.correct = 0;
         currentData.wrong = 0;
@@ -665,7 +665,7 @@ function executeStart() {
         document.getElementById('result-stage').classList.add('hidden');
         document.getElementById('quiz-stage').classList.remove('hidden');
 
-        // 判斷模式：挑戰模式進入倒數流程，一般模式直接出題
+        // 🚀 核心優化 1：挑戰模式進入倒數流程，一般模式直接出題
         if (currentData.mode === 'contest') {
             // 1. 鎖定輸入框與按鈕，不讓學生偷跑
             document.getElementById('user-answer').disabled = true;
@@ -716,6 +716,7 @@ function executeStart() {
             generateQuestion();
         }
     }
+
     function getRandomNumWithoutZero() {
         let num = 0;
         while (num === 0) { num = Math.floor(Math.random() * 21) - 10; }
@@ -771,6 +772,7 @@ function executeStart() {
                 currentData.correct++;
                 feedbackEl.innerText = '⭕ 答對了！';
                 feedbackEl.className = 'feedback correct';
+                // 挑戰模式直接極速換題
                 setTimeout(() => { if (timeLeft > 0) generateQuestion(); }, 100);
             } else {
                 feedbackEl.innerText = '❌ 算錯囉，再試一次！';
@@ -794,6 +796,7 @@ function executeStart() {
                     savePracticeBatch();
                 }
 
+                // 🚀 核心優化 2：一般/進階練習答對精準停留 0.8 秒自動前進
                 setTimeout(() => { if(isWaitingForNext) generateQuestion(); }, 800);
             } else {
                 currentData.wrong++;
@@ -905,7 +908,6 @@ function executeStart() {
                         todayCount: 0,
                         weekActiveDays: 0, weekTotalCorrect: 0,
                         dayRecords: {},
-                        // 用來計算歷史單日累計數據的容器
                         allDaysMap: {}
                     };
                     past7Days.forEach(d => {
@@ -921,7 +923,6 @@ function executeStart() {
 
                 let s = studentMap[name];
 
-                // 歷史單日歸戶累計 (徽章系統核心計算)
                 if (datePart) {
                     if (!s.allDaysMap[datePart]) {
                         s.allDaysMap[datePart] = { correct: 0, total: 0, basicCorrect: 0, advancedCorrect: 0 };
@@ -932,7 +933,6 @@ function executeStart() {
                     if (recordMode === '進階') s.allDaysMap[datePart].advancedCorrect += correct;
                 }
 
-                // 1. 一週勤奮榜
                 if (s.dayRecords[datePart] !== undefined) {
                     s.dayRecords[datePart].correct += correct;
                     s.dayRecords[datePart].total += total;
@@ -954,7 +954,6 @@ function executeStart() {
                     }
                 }
 
-                // 2. 挑戰賽數據
                 if (recordMode === '挑戰') {
                     s.historyTotalCount++;
 
@@ -977,7 +976,6 @@ function executeStart() {
                 }
             });
 
-            // 計算 7 日打卡天數
             let allStudents = Object.values(studentMap);
             allStudents.forEach(s => {
                 let activeDays = 0;
@@ -985,7 +983,6 @@ function executeStart() {
                 s.weekActiveDays = activeDays;
             });
 
-            // 🎯 大廳登入學生 9 大徽章與看板計算邏輯
             if (currentData.name) {
                 const sData = studentMap[currentData.name.trim()];
                 
@@ -993,16 +990,14 @@ function executeStart() {
                 let todayBasicCorrect = 0;
                 let todayAdvanceCorrect = 0;
 
-                // 9 徽章判定初始值
-                let maxSingleDayCorrect = 0;     // 歷史單日最高全模式答對 (初出茅廬 / 熟能生巧)
-                let maxSingleDayBasic = 0;       // 歷史單日最高基礎答對 (基礎奠基)
-                let maxSingleDayAdvance = 0;     // 歷史單日最高進階答對 (勇於挑戰)
-                let hasSniper = false;           // 歷史是否曾單日滿100題且正確率>=95% (精準射手)
-                let greenDotsCount = 0;          // 近 7 日綠球數 (持之以恆)
-                let historyMaxCorrect = 0;       // 歷史挑戰賽單場最高答對 (突破極限 / 閃電快手)
-                let hasHistoryPerfect = false;   // 歷史挑戰賽單場 100% 正確率且答對 > 28 (登峰造極)
+                let maxSingleDayCorrect = 0;     
+                let maxSingleDayBasic = 0;       
+                let maxSingleDayAdvance = 0;     
+                let hasSniper = false;           
+                let greenDotsCount = 0;          
+                let historyMaxCorrect = 0;       
+                let hasHistoryPerfect = false;   
 
-                // 輔助暫存用於顯示未達成時的最接近紀錄
                 let sniperBestTotal = 0;
                 let sniperBestRate = 0;
 
@@ -1020,19 +1015,16 @@ function executeStart() {
                         todayAdvanceCorrect = sData.dayRecords[todayStr].advanced.correct;
                     }
 
-                    // 遍歷所有歷史日曆，計算歷史「單日」最值
                     Object.keys(sData.allDaysMap).forEach(d => {
                         let dayData = sData.allDaysMap[d];
                         if (dayData.correct > maxSingleDayCorrect) maxSingleDayCorrect = dayData.correct;
                         if (dayData.basicCorrect > maxSingleDayBasic) maxSingleDayBasic = dayData.basicCorrect;
                         if (dayData.advancedCorrect > maxSingleDayAdvance) maxSingleDayAdvance = dayData.advancedCorrect;
 
-                        // 判斷精準射手
                         let dayRate = dayData.total === 0 ? 0 : Math.round((dayData.correct / dayData.total) * 100);
                         if (dayData.total >= 100 && dayRate >= 95) {
                             hasSniper = true;
                         }
-                        // 追蹤未解鎖時「最接近」的數值
                         if (dayData.total > sniperBestTotal) {
                             sniperBestTotal = dayData.total;
                             sniperBestRate = dayRate;
@@ -1040,12 +1032,11 @@ function executeStart() {
                     });
                 }
                 
-                // 更新大廳看板數據
                 document.getElementById('lobby-today-count').innerText = `⏱️ 今日挑戰次數：${todayCount} 次`;
                 document.getElementById('lobby-today-basic').innerText = `📘 今日基礎答對：${todayBasicCorrect} 題`;
                 document.getElementById('lobby-today-advance').innerText = `📗 今日進階答對：${todayAdvanceCorrect} 題`;
 
-               // 1. 🥚 初出茅廬 (歷史單日全模式答對 10 題)
+                // 1. 🥚 初出茅廬
                 const badgeNovice = document.getElementById('badge-novice');
                 const progNovice = document.getElementById('badge-progress-novice');
                 if (maxSingleDayCorrect >= 10) {
@@ -1057,7 +1048,7 @@ function executeStart() {
                 }
                 badgeNovice.setAttribute('data-tip', `條件：歷史單日全模式累計答對滿 10 題\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
 
-                // 2. 🔥 熟能生巧 (歷史單日全模式答對 300 題)
+                // 2. 🔥 熟能生巧
                 const badgeMaster = document.getElementById('badge-master');
                 const progMaster = document.getElementById('badge-progress-master');
                 if (maxSingleDayCorrect >= 300) {
@@ -1069,7 +1060,7 @@ function executeStart() {
                 }
                 badgeMaster.setAttribute('data-tip', `條件：歷史單日全模式累計答對滿 300 題\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
 
-                // 3. 📅 持之以恆 (近 7 日有 6 天以上上線)
+                // 3. 📅 持之以恆
                 const badgePioneer = document.getElementById('badge-pioneer');
                 const progPioneer = document.getElementById('badge-progress-pioneer');
                 if (greenDotsCount >= 6) {
@@ -1081,7 +1072,7 @@ function executeStart() {
                 }
                 badgePioneer.setAttribute('data-tip', `條件：近 7 日足跡有 6 顆(或以上)綠球\n目前近 7 日已亮：${greenDotsCount} 顆球`);
 
-                // 4. 👑 突破極限 (歷史挑戰賽單場答對 32 題)
+                // 4. 👑 突破極限
                 const badgeLimit = document.getElementById('badge-limit');
                 const progLimit = document.getElementById('badge-progress-limit');
                 if (historyMaxCorrect >= 32) {
@@ -1093,7 +1084,7 @@ function executeStart() {
                 }
                 badgeLimit.setAttribute('data-tip', `條件：歷史挑戰賽單場答對滿 32 題以上\n目前個人最高單場：${historyMaxCorrect} 題`);
 
-                // 5. 🌟 登峰造極 (歷史挑戰賽 100% 正確率 且答對 > 28 題)
+                // 5. 🌟 登峰造極
                 const badgePerfect = document.getElementById('badge-perfect');
                 const progPerfect = document.getElementById('badge-progress-perfect');
                 if (hasHistoryPerfect) {
@@ -1105,7 +1096,7 @@ function executeStart() {
                 }
                 badgePerfect.setAttribute('data-tip', `條件：歷史挑戰賽 100% 正確比率且答對題數大於 28 題\n目前個人最佳挑戰：答對 ${historyMaxCorrect} 題 (${sData ? sData.maxRate : 0}%)`);
 
-                // 6. ⚡ 閃電快手 (歷史挑戰賽單場答對 20 題)
+                // 6. ⚡ 閃電快手
                 const badgeSpeed = document.getElementById('badge-speed');
                 const progSpeed = document.getElementById('badge-progress-speed');
                 if (historyMaxCorrect >= 20) {
@@ -1117,7 +1108,7 @@ function executeStart() {
                 }
                 badgeSpeed.setAttribute('data-tip', `條件：歷史挑戰賽單場答對滿 20 題以上\n目前個人最高單場：${historyMaxCorrect} 題`);
 
-                // 7. 📘 基礎奠基 (歷史單日基礎答對 200 題)
+                // 7. 📘 基礎奠基
                 const badgeBasic = document.getElementById('badge-basic');
                 const progBasic = document.getElementById('badge-progress-basic');
                 if (maxSingleDayBasic >= 200) {
@@ -1129,7 +1120,7 @@ function executeStart() {
                 }
                 badgeBasic.setAttribute('data-tip', `條件：歷史單日「基礎練習」累計答對滿 200 題\n個人單日基礎最高：${maxSingleDayBasic} 題`);
 
-                // 8. 🟢 勇於挑戰 (歷史單日進階答對 50 題)
+                // 8. 🟢 勇於挑戰
                 const badgeAdvance = document.getElementById('badge-advance');
                 const progAdvance = document.getElementById('badge-progress-advance');
                 if (maxSingleDayAdvance >= 50) {
@@ -1141,7 +1132,7 @@ function executeStart() {
                 }
                 badgeAdvance.setAttribute('data-tip', `條件：歷史單日「進階練習」累計答對滿 50 題\n個人單日進階最高：${maxSingleDayAdvance} 題`);
 
-                // 9. 🎯 精準射手 (歷史單日總答題>=100且正確率>=95%)
+                // 9. 🎯 精準射手
                 const badgeSniper = document.getElementById('badge-sniper');
                 const progSniper = document.getElementById('badge-progress-sniper');
                 if (hasSniper) {
