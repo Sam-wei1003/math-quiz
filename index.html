@@ -374,17 +374,17 @@
             </div>
         </div>
 
-        <!-- 🏆 9 大歷史永久徽章展示牆 (已修正熟能生巧門檻) -->
+        <!-- 🏆 9 大歷史永久徽章展示牆 (初出、熟能已修正為歷史總計) -->
         <div id="badge-stage-placeholder" class="badge-wall">
             <div class="badge-wall-title">🏆 你的成就徽章牆</div>
             <div class="badge-container">
                 <!-- Row 1 -->
-                <div id="badge-novice" class="badge-item" data-tip="條件：歷史單日全模式累計答對滿 10 題&#10;進度：計算中...">
+                <div id="badge-novice" class="badge-item" data-tip="條件：歷史全模式總計答對滿 10 題&#10;進度：計算中...">
                     <span class="badge-icon">🥚</span>
                     <span class="badge-name">初出茅廬</span>
                     <span id="badge-progress-novice" class="badge-progress">0/10</span>
                 </div>
-                <div id="badge-master" class="badge-item" data-tip="條件：歷史單日全模式累計答對滿 100/300/1000/2500/5000 題&#10;進度：計算中...">
+                <div id="badge-master" class="badge-item" data-tip="條件：歷史全模式總計答對滿 100/300/1000/2500/5000 題&#10;進度：計算中...">
                     <span class="badge-icon">🔥</span>
                     <span class="badge-name" id="badge-name-master">熟能生巧 I</span>
                     <span id="badge-progress-master" class="badge-progress">0/100</span>
@@ -876,6 +876,7 @@
                         name: name,
                         historyMaxCorrect: 0, totalAnsOfMax: 0, maxRate: 0, maxTime: '',
                         historyTotalCount: 0,
+                        historyTotalCorrect: 0, // 👈 累計一輩子全模式總答對題數
                         todayMaxCorrect: 0, todayTotalAns: 0, todayRate: 0, todayTime: '',
                         todayCount: 0, weekActiveDays: 0, weekTotalCorrect: 0,
                         dayRecords: {}, allDaysMap: {}
@@ -891,6 +892,10 @@
                 }
 
                 let s = studentMap[name];
+                
+                // 累計歷史永久總答對
+                s.historyTotalCorrect += correct;
+
                 if (datePart) {
                     if (!s.allDaysMap[datePart]) {
                         s.allDaysMap[datePart] = { correct: 0, total: 0, basicCorrect: 0, advancedCorrect: 0 };
@@ -950,9 +955,12 @@
             if (currentData.name) {
                 const sData = studentMap[currentData.name.trim()];
                 let todayCount = 0, todayBasicCorrect = 0, todayAdvanceCorrect = 0;
-                let maxSingleDayCorrect = 0, maxSingleDayBasic = 0, maxSingleDayAdvance = 0;
+                let maxSingleDayBasic = 0, maxSingleDayAdvance = 0;
                 let hasSniper = false, greenDotsCount = 0, historyMaxCorrect = 0, hasHistoryPerfect = false;
                 let sniperBestTotal = 0, sniperBestRate = 0;
+                
+                // 取得永久歷史總答對題數
+                let globalTotalCorrect = sData ? sData.historyTotalCorrect : 0;
 
                 if (sData) {
                     todayCount = sData.todayCount;
@@ -966,7 +974,6 @@
 
                     Object.keys(sData.allDaysMap).forEach(d => {
                         let dayData = sData.allDaysMap[d];
-                        if (dayData.correct > maxSingleDayCorrect) maxSingleDayCorrect = dayData.correct;
                         if (dayData.basicCorrect > maxSingleDayBasic) maxSingleDayBasic = dayData.basicCorrect;
                         if (dayData.advancedCorrect > maxSingleDayAdvance) maxSingleDayAdvance = dayData.advancedCorrect;
 
@@ -980,36 +987,36 @@
                 document.getElementById('lobby-today-basic').innerText = `📘 今日基礎答對：${todayBasicCorrect} 題`;
                 document.getElementById('lobby-today-advance').innerText = `📗 今日進階答對：${todayAdvanceCorrect} 題`;
 
-                // 1. 🥚 初出茅廬
+                // 1. 🥚 初出茅廬 (修正為：歷史全模式永久總計滿 10 題)
                 const badgeNovice = document.getElementById('badge-novice');
                 const progNovice = document.getElementById('badge-progress-novice');
-                if (maxSingleDayCorrect >= 10) { badgeNovice.className = "badge-item unlocked"; progNovice.innerText = "已達成! 🎉"; } 
-                else { badgeNovice.className = "badge-item"; progNovice.innerText = `${maxSingleDayCorrect}/10`; }
-                badgeNovice.setAttribute('data-tip', `條件：歷史單日全模式累計答對滿 10 題\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
+                if (globalTotalCorrect >= 10) { badgeNovice.className = "badge-item unlocked"; progNovice.innerText = "已達成! 🎉"; } 
+                else { badgeNovice.className = "badge-item"; progNovice.innerText = `${globalTotalCorrect}/10`; }
+                badgeNovice.setAttribute('data-tip', `條件：歷史全模式永久總計答對滿 10 題\n目前個人歷史永久總計：${globalTotalCorrect} 題`);
 
-                // 🚀 2. 🔥 熟能生巧 (修正為：100、300、1000、2500、5000 題)
+                // 2. 🔥 熟能生巧 (修正為：歷史全模式永久總計滿 100/300/1000/2500/5000 題)
                 const badgeMaster = document.getElementById('badge-master');
                 const nameMaster = document.getElementById('badge-name-master');
                 const progMaster = document.getElementById('badge-progress-master');
                 
-                if (maxSingleDayCorrect >= 5000) {
+                if (globalTotalCorrect >= 5000) {
                     badgeMaster.className = "badge-item unlocked"; nameMaster.innerText = "熟能生巧 V"; progMaster.innerText = "已滿階! 🎉";
-                    badgeMaster.setAttribute('data-tip', `條件：單日累計答對題數\n階級：V 階 (滿階紀錄)\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
-                } else if (maxSingleDayCorrect >= 2500) {
-                    badgeMaster.className = "badge-item unlocked"; nameMaster.innerText = "熟能生巧 IV"; progMaster.innerText = `${maxSingleDayCorrect}/5000`;
-                    badgeMaster.setAttribute('data-tip', `條件：單日累計答對題數\n階級：IV 階 (下一階需 5000 題)\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
-                } else if (maxSingleDayCorrect >= 1000) {
-                    badgeMaster.className = "badge-item unlocked"; nameMaster.innerText = "熟能生巧 III"; progMaster.innerText = `${maxSingleDayCorrect}/2500`;
-                    badgeMaster.setAttribute('data-tip', `條件：單日累計答對題數\n階級：III 階 (下一階需 2500 題)\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
-                } else if (maxSingleDayCorrect >= 300) {
-                    badgeMaster.className = "badge-item unlocked"; nameMaster.innerText = "熟能生巧 II"; progMaster.innerText = `${maxSingleDayCorrect}/1000`;
-                    badgeMaster.setAttribute('data-tip', `條件：單日累計答對題數\n階級：II 階 (下一階需 1000 題)\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
-                } else if (maxSingleDayCorrect >= 100) {
-                    badgeMaster.className = "badge-item unlocked"; nameMaster.innerText = "熟能生巧 I"; progMaster.innerText = `${maxSingleDayCorrect}/300`;
-                    badgeMaster.setAttribute('data-tip', `條件：單日累計答對題數\n階級：I 階 (下一階需 300 題)\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
+                    badgeMaster.setAttribute('data-tip', `條件：歷史永久總計答對題數\n階級：V 階 (滿階紀錄)\n目前個人歷史永久總計：${globalTotalCorrect} 題`);
+                } else if (globalTotalCorrect >= 2500) {
+                    badgeMaster.className = "badge-item unlocked"; nameMaster.innerText = "熟能生巧 IV"; progMaster.innerText = `${globalTotalCorrect}/5000`;
+                    badgeMaster.setAttribute('data-tip', `條件：歷史永久總計答對題數\n階級：IV 階 (下一階需 5000 題)\n目前個人歷史永久總計：${globalTotalCorrect} 題`);
+                } else if (globalTotalCorrect >= 1000) {
+                    badgeMaster.className = "badge-item unlocked"; nameMaster.innerText = "熟能生巧 III"; progMaster.innerText = `${globalTotalCorrect}/2500`;
+                    badgeMaster.setAttribute('data-tip', `條件：歷史永久總計答對題數\n階級：III 階 (下一階需 2500 題)\n目前個人歷史永久總計：${globalTotalCorrect} 題`);
+                } else if (globalTotalCorrect >= 300) {
+                    badgeMaster.className = "badge-item unlocked"; nameMaster.innerText = "熟能生巧 II"; progMaster.innerText = `${globalTotalCorrect}/1000`;
+                    badgeMaster.setAttribute('data-tip', `條件：歷史永久總計答對題數\n階級：II 階 (下一階需 1000 題)\n目前個人歷史永久總計：${globalTotalCorrect} 題`);
+                } else if (globalTotalCorrect >= 100) {
+                    badgeMaster.className = "badge-item unlocked"; nameMaster.innerText = "熟能生巧 I"; progMaster.innerText = `${globalTotalCorrect}/300`;
+                    badgeMaster.setAttribute('data-tip', `條件：歷史永久總計答對題數\n階級：I 階 (下一階需 300 題)\n目前個人歷史永久總計：${globalTotalCorrect} 題`);
                 } else {
-                    badgeMaster.className = "badge-item"; nameMaster.innerText = "熟能生巧 I"; progMaster.innerText = `${maxSingleDayCorrect}/100`;
-                    badgeMaster.setAttribute('data-tip', `條件：歷史單日全模式累計答對滿 100 題解鎖 I 階\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
+                    badgeMaster.className = "badge-item"; nameMaster.innerText = "熟能生巧 I"; progMaster.innerText = `${globalTotalCorrect}/100`;
+                    badgeMaster.setAttribute('data-tip', `條件：歷史全模式永久總計答對滿 100 題解鎖 I 階\n目前個人歷史永久總計：${globalTotalCorrect} 題`);
                 }
 
                 // 3. 📅 持之以恆
