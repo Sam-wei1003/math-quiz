@@ -65,8 +65,8 @@
         .btn-submit:hover { background-color: #219653; }
         .btn-nav { background-color: #95a5a6; }
         .btn-nav:hover { background-color: #7f8c8d; }
-        .btn-logout { background-color: #bdc3c7; color: #333; font-size: 14px; padding: 5px 10px; margin-top: 10px; }
-        .btn-logout:hover { background-color: #95a5a6; }
+        .btn-logout { background-color: #e74c3c; font-weight: bold; font-size: 14px; padding: 4px 10px; margin-top: 5px; display: inline-block; cursor: pointer; border-radius: 4px; color: white; }
+        .btn-logout:hover { background-color: #c0392b; }
         .btn-again { background-color: #27ae60; font-weight: bold; }
         .btn-again:hover { background-color: #219653; }
         
@@ -78,11 +78,13 @@
             margin-bottom: 15px;
             border-left: 5px solid #3498db;
             text-align: left;
+            position: relative;
         }
         .lobby-welcome h3 { margin: 0 0 8px 0; color: #2c3e50; font-size: 18px; }
         .lobby-welcome p { margin: 4px 0; color: #566573; font-size: 15px; font-weight: bold; }
+        .logout-container { text-align: right; margin-top: -5px; }
 
-        /* 🏆 徽章展示牆樣式 (調整為 3x3 精美排版) */
+        /* 🏆 徽章展示牆樣式 */
         .badge-wall {
             background-color: #fcf3cf;
             border: 2px solid #f1c40f;
@@ -102,7 +104,7 @@
         }
         .badge-container {
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3x3 網格 */
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
         }
         .badge-item {
@@ -120,7 +122,6 @@
             position: relative;
             cursor: help;
         }
-        /* 已解鎖徽章樣式 */
         .badge-item.unlocked {
             filter: grayscale(0%);
             opacity: 1;
@@ -314,7 +315,6 @@
             background-color: #2ecc71;
         }
 
-        /* 懸浮提示小卡片 */
         .dot::after {
             content: attr(data-tip);
             position: absolute;
@@ -353,7 +353,7 @@
 <body>
 
 <div class="container">
-    <!-- 階段一：純登入閘門 -->
+    <!-- 階段一：純登入 -->
     <div id="login-stage">
         <h1>正負數加減法練習</h1>
         <h2 style="margin-bottom: 25px;">請輸入名字以進入修練場：</h2>
@@ -362,29 +362,32 @@
         <button onclick="handleLogin()" class="btn-login">進入修練場 🚀</button>
     </div>
 
-    <!-- 階段二：個人大廳 (Lobby) -->
+    <!-- 階段二：個人大廳 -->
     <div id="lobby-stage" class="hidden">
         <div class="lobby-welcome">
             <h3 id="lobby-welcome-text">👋 哈囉，- ！今天想挑戰哪一個模式？</h3>
             <p id="lobby-today-count">⏱️ 今日挑戰次數：0 次</p>
             <p id="lobby-today-basic">📘 今日基礎答對：0 題</p>
             <p id="lobby-today-advance">📗 今日進階答對：0 題</p>
+            <div class="logout-container">
+                <span onclick="logout()" class="btn-logout">更換帳號 🔄</span>
+            </div>
         </div>
 
-        <!-- 🏆 9 大歷史永久徽章展示牆 (3x3 精美佈局) -->
+        <!-- 🏆 9 大歷史永久徽章展示牆 (已修正熟能生巧門檻) -->
         <div id="badge-stage-placeholder" class="badge-wall">
             <div class="badge-wall-title">🏆 你的成就徽章牆</div>
             <div class="badge-container">
-                <!-- Row 1: 基礎成長 -->
+                <!-- Row 1 -->
                 <div id="badge-novice" class="badge-item" data-tip="條件：歷史單日全模式累計答對滿 10 題&#10;進度：計算中...">
                     <span class="badge-icon">🥚</span>
                     <span class="badge-name">初出茅廬</span>
                     <span id="badge-progress-novice" class="badge-progress">0/10</span>
                 </div>
-                <div id="badge-master" class="badge-item" data-tip="條件：歷史單日全模式累計答對滿 300 題&#10;進度：計算中...">
+                <div id="badge-master" class="badge-item" data-tip="條件：歷史單日全模式累計答對滿 100/300/1000/2500/5000 題&#10;進度：計算中...">
                     <span class="badge-icon">🔥</span>
-                    <span class="badge-name">熟能生巧</span>
-                    <span id="badge-progress-master" class="badge-progress">0/300</span>
+                    <span class="badge-name" id="badge-name-master">熟能生巧 I</span>
+                    <span id="badge-progress-master" class="badge-progress">0/100</span>
                 </div>
                 <div id="badge-pioneer" class="badge-item" data-tip="條件：近 7 日練習足跡中，有 6 天（或以上）有練習紀錄&#10;進度：計算中...">
                     <span class="badge-icon">📅</span>
@@ -392,7 +395,7 @@
                     <span id="badge-progress-pioneer" class="badge-progress">0/6</span>
                 </div>
 
-                <!-- Row 2: 挑戰極限 -->
+                <!-- Row 2 -->
                 <div id="badge-limit" class="badge-item" data-tip="條件：歷史個人挑戰賽單場答對滿 32 題以上&#10;進度：計算中...">
                     <span class="badge-icon">👑</span>
                     <span class="badge-name">突破極限</span>
@@ -409,7 +412,7 @@
                     <span id="badge-progress-speed" class="badge-progress">0/20</span>
                 </div>
 
-                <!-- Row 3: 專項特長 -->
+                <!-- Row 3 -->
                 <div id="badge-basic" class="badge-item" data-tip="條件：歷史單日「基礎練習」累計答對滿 200 題&#10;進度：計算中...">
                     <span class="badge-icon">📘</span>
                     <span class="badge-name">基礎奠基</span>
@@ -434,7 +437,6 @@
             <div onclick="startGame('contest')" class="mode-card card-contest">⏱️ 1分鐘限時挑戰賽</div>
         </div>
 
-        <!-- 排行榜在大廳最下方 -->
         <div class="leaderboard">
             <div class="tab-container">
                 <button id="tab-home-week" class="tab-btn active" onclick="switchTab('home', 'week')">🔥 一週勤奮榜</button>
@@ -461,7 +463,7 @@
         </div>
     </div>
 
-    <!-- 階段三：作答區 (Quiz) -->
+    <!-- 階段三：作答區 -->
     <div id="quiz-stage" class="hidden">
         <div id="timer-wrapper" class="timer-box hidden">剩餘時間：<span id="timer-sec">60</span> 秒</div>
         
@@ -488,7 +490,7 @@
         <button onclick="exitGame()" class="btn-nav" style="margin-top:15px;">返回大廳</button>
     </div>
 
-    <!-- 階段四：結算區 (Result) -->
+    <!-- 階段四：結算區 -->
     <div id="result-stage" class="hidden">
         <h1 style="color: #e74c3c;">⏱️ 時間到！挑戰結束</h1>
         <div class="scoreboard" style="background-color: #eaecee; margin-top: 20px;">
@@ -565,17 +567,11 @@
     function handleLogin() {
         const nameInput = document.getElementById('username').value.trim();
         if (!nameInput) { alert('請先輸入名字喔！'); return; }
-        
         currentData.name = nameInput;
         
         document.getElementById('login-stage').classList.add('hidden');
         document.getElementById('lobby-stage').classList.remove('hidden');
-        
         document.getElementById('lobby-welcome-text').innerText = `👋 哈囉，${currentData.name}！今天想挑戰哪一個模式？`;
-        
-        document.getElementById('lobby-today-count').innerText = `⏱️ 今日挑戰次數：讀取中...`;
-        document.getElementById('lobby-today-basic').innerText = `📘 今日基礎答對：讀取中...`;
-        document.getElementById('lobby-today-advance').innerText = `📗 今日進階答對：讀取中...`;
         
         switchTab('home', currentTabs['home']);
     }
@@ -603,7 +599,6 @@
         if (type === 'week') {
             centerTh.innerText = "近7日練習足跡 (右為今天)";
             rateTh.style.display = 'none';
-            
             nameTh.style.width = "33%";
             centerTh.style.width = "42%";
             scoreTh.style.width = "15%";
@@ -611,7 +606,6 @@
             if (type === 'today') centerTh.innerText = "本次挑戰詳細時分秒";
             else centerTh.innerText = "歷史挑戰日期紀錄";
             rateTh.style.display = '';
-            
             nameTh.style.width = "28%";
             centerTh.style.width = "36%";
             scoreTh.style.width = "13%";
@@ -636,25 +630,23 @@
         currentData.correct = 0;
         currentData.wrong = 0;
         isWaitingForNext = false;
-
         practiceBuffer.correct = 0;
         practiceBuffer.total = 0;
         
         currentSessionId = "session_" + new Date().getTime() + "_" + Math.floor(Math.random() * 1000);
-
         document.getElementById('lbl-name').innerText = currentData.name;
+        
         let modeTitle = '基礎練習';
         if(currentData.mode === 'advanced') modeTitle = '進階練習';
         if(currentData.mode === 'contest') modeTitle = '⏱️ 1分鐘競賽';
         document.getElementById('lbl-mode').innerText = modeTitle;
 
-        // 先把舊的計時器清掉，避免重複疊加
         clearInterval(timerInterval);
 
         if (currentData.mode === 'contest') {
             document.getElementById('timer-wrapper').classList.remove('hidden');
             document.getElementById('wrong-box-title').innerHTML = `嘗試次數: <span id="lbl-wrong">0</span> 次`;
-            document.getElementById('timer-sec').innerText = "60"; // 先預設顯示 60
+            document.getElementById('timer-sec').innerText = "60";
         } else {
             document.getElementById('timer-wrapper').classList.add('hidden');
             document.getElementById('wrong-box-title').innerHTML = `答錯題數: <span id="lbl-wrong">0</span> 題`;
@@ -665,34 +657,29 @@
         document.getElementById('result-stage').classList.add('hidden');
         document.getElementById('quiz-stage').classList.remove('hidden');
 
-        // 🚀 核心優化 1：挑戰模式進入倒數流程，一般模式直接出題
         if (currentData.mode === 'contest') {
-            // 1. 鎖定輸入框與按鈕，不讓學生偷跑
             document.getElementById('user-answer').disabled = true;
             document.getElementById('btn-submit').disabled = true;
             document.getElementById('user-answer').placeholder = "等待倒數結束...";
 
-            // 2. 開始準備倒數 3 秒
             let prepareTime = 3;
             document.getElementById('question-text').innerText = `預備... ${prepareTime}`;
-            document.getElementById('question-text').style.color = '#e67e22'; // 變成橘色比較醒目
+            document.getElementById('question-text').style.color = '#e67e22'; 
 
             timerInterval = setInterval(() => {
                 prepareTime--;
                 if (prepareTime > 0) {
                     document.getElementById('question-text').innerText = `預備... ${prepareTime}`;
                 } else {
-                    // 3. 準備結束，解除鎖定並正式出第一題
                     clearInterval(timerInterval);
-                    document.getElementById('question-text').style.color = '#2c3e50'; // 恢復原本字體顏色
+                    document.getElementById('question-text').style.color = '#2c3e50'; 
                     document.getElementById('user-answer').disabled = false;
                     document.getElementById('btn-submit').disabled = false;
                     document.getElementById('user-answer').placeholder = "請輸入答案";
-                    document.getElementById('user-answer').focus(); // 自動聚焦方便直接打字
+                    document.getElementById('user-answer').focus(); 
                     
-                    generateQuestion(); // 正式出題
+                    generateQuestion(); 
 
-                    // 4. 啟動核心 60 秒競賽計時器
                     timeLeft = 60;
                     document.getElementById('timer-sec').innerText = timeLeft;
                     
@@ -706,9 +693,7 @@
                     }, 1000);
                 }
             }, 1000);
-
         } else {
-            // 基礎與進階模式：直接出題，不鎖定
             document.getElementById('user-answer').disabled = false;
             document.getElementById('btn-submit').disabled = false;
             document.getElementById('user-answer').placeholder = "請輸入答案";
@@ -772,7 +757,6 @@
                 currentData.correct++;
                 feedbackEl.innerText = '⭕ 答對了！';
                 feedbackEl.className = 'feedback correct';
-                // 挑戰模式直接極速換題
                 setTimeout(() => { if (timeLeft > 0) generateQuestion(); }, 100);
             } else {
                 feedbackEl.innerText = '❌ 算錯囉，再試一次！';
@@ -787,16 +771,11 @@
             if (userAnswer === currentAnswer) {
                 currentData.correct++;
                 practiceBuffer.correct++;
-
                 feedbackEl.innerText = '⭕ 太棒了！答對了！';
                 feedbackEl.className = 'feedback correct';
                 isWaitingForNext = true;
 
-                if (practiceBuffer.correct >= 10) {
-                    savePracticeBatch();
-                }
-
-                // 🚀 核心優化 2：一般/進階練習答對精準停留 0.8 秒自動前進
+                if (practiceBuffer.correct >= 10) savePracticeBatch();
                 setTimeout(() => { if(isWaitingForNext) generateQuestion(); }, 800);
             } else {
                 currentData.wrong++;
@@ -823,7 +802,6 @@
             mode: modeText,
             sessionId: currentSessionId
         });
-
         practiceBuffer.correct = 0;
         practiceBuffer.total = 0;
     }
@@ -859,15 +837,10 @@
 
     function exitGame() {
         clearInterval(timerInterval);
-        
-        if (currentData.mode !== 'contest' && practiceBuffer.total > 0) {
-            savePracticeBatch();
-        }
-
+        if (currentData.mode !== 'contest' && practiceBuffer.total > 0) savePracticeBatch();
         document.getElementById('quiz-stage').classList.add('hidden');
         document.getElementById('result-stage').classList.add('hidden');
         document.getElementById('lobby-stage').classList.remove('hidden');
-        
         switchTab('home', currentTabs['home']);
     }
 
@@ -886,7 +859,6 @@
         database.ref('contest_records').once('value', (snapshot) => {
             const todayStr = new Date().toLocaleDateString('zh-TW');
             const past7Days = getPast7Days();
-            
             let studentMap = {};
 
             snapshot.forEach((childSnapshot) => {
@@ -905,15 +877,12 @@
                         historyMaxCorrect: 0, totalAnsOfMax: 0, maxRate: 0, maxTime: '',
                         historyTotalCount: 0,
                         todayMaxCorrect: 0, todayTotalAns: 0, todayRate: 0, todayTime: '',
-                        todayCount: 0,
-                        weekActiveDays: 0, weekTotalCorrect: 0,
-                        dayRecords: {},
-                        allDaysMap: {}
+                        todayCount: 0, weekActiveDays: 0, weekTotalCorrect: 0,
+                        dayRecords: {}, allDaysMap: {}
                     };
                     past7Days.forEach(d => {
                         studentMap[name].dayRecords[d] = { 
-                            correct: 0, 
-                            total: 0,
+                            correct: 0, total: 0,
                             basic: { correct: 0, total: 0, sessions: new Set() },
                             advanced: { correct: 0, total: 0, sessions: new Set() },
                             contest: { correct: 0, total: 0, sessions: new Set() }
@@ -922,7 +891,6 @@
                 }
 
                 let s = studentMap[name];
-
                 if (datePart) {
                     if (!s.allDaysMap[datePart]) {
                         s.allDaysMap[datePart] = { correct: 0, total: 0, basicCorrect: 0, advancedCorrect: 0 };
@@ -936,9 +904,7 @@
                 if (s.dayRecords[datePart] !== undefined) {
                     s.dayRecords[datePart].correct += correct;
                     s.dayRecords[datePart].total += total;
-                    
                     let sessionKey = recordSessionId || ("legacy_" + childSnapshot.key);
-
                     if (recordMode === '基礎') {
                         s.dayRecords[datePart].basic.correct += correct;
                         s.dayRecords[datePart].basic.total += total;
@@ -956,14 +922,12 @@
 
                 if (recordMode === '挑戰') {
                     s.historyTotalCount++;
-
                     if (correct > s.historyMaxCorrect || (correct === s.historyMaxCorrect && (correct/total) > (s.historyMaxCorrect/s.totalAnsOfMax))) {
                         s.historyMaxCorrect = correct;
                         s.totalAnsOfMax = total;
                         s.maxRate = Math.round((correct / total) * 100);
                         s.maxTime = timeStr;
                     }
-
                     if (timeStr.startsWith(todayStr)) {
                         s.todayCount++;
                         if (correct > s.todayMaxCorrect || (correct === s.todayMaxCorrect && (correct/total) > (s.todayMaxCorrect/s.todayTotalAns))) {
@@ -985,31 +949,16 @@
 
             if (currentData.name) {
                 const sData = studentMap[currentData.name.trim()];
-                
-                let todayCount = 0;
-                let todayBasicCorrect = 0;
-                let todayAdvanceCorrect = 0;
-
-                let maxSingleDayCorrect = 0;     
-                let maxSingleDayBasic = 0;       
-                let maxSingleDayAdvance = 0;     
-                let hasSniper = false;           
-                let greenDotsCount = 0;          
-                let historyMaxCorrect = 0;       
-                let hasHistoryPerfect = false;   
-
-                let sniperBestTotal = 0;
-                let sniperBestRate = 0;
+                let todayCount = 0, todayBasicCorrect = 0, todayAdvanceCorrect = 0;
+                let maxSingleDayCorrect = 0, maxSingleDayBasic = 0, maxSingleDayAdvance = 0;
+                let hasSniper = false, greenDotsCount = 0, historyMaxCorrect = 0, hasHistoryPerfect = false;
+                let sniperBestTotal = 0, sniperBestRate = 0;
 
                 if (sData) {
                     todayCount = sData.todayCount;
                     historyMaxCorrect = sData.historyMaxCorrect;
                     greenDotsCount = sData.weekActiveDays;
-
-                    if (sData.maxRate === 100 && sData.historyMaxCorrect > 28) {
-                        hasHistoryPerfect = true;
-                    }
-
+                    if (sData.maxRate === 100 && sData.historyMaxCorrect > 28) hasHistoryPerfect = true;
                     if (sData.dayRecords[todayStr]) {
                         todayBasicCorrect = sData.dayRecords[todayStr].basic.correct;
                         todayAdvanceCorrect = sData.dayRecords[todayStr].advanced.correct;
@@ -1022,13 +971,8 @@
                         if (dayData.advancedCorrect > maxSingleDayAdvance) maxSingleDayAdvance = dayData.advancedCorrect;
 
                         let dayRate = dayData.total === 0 ? 0 : Math.round((dayData.correct / dayData.total) * 100);
-                        if (dayData.total >= 100 && dayRate >= 95) {
-                            hasSniper = true;
-                        }
-                        if (dayData.total > sniperBestTotal) {
-                            sniperBestTotal = dayData.total;
-                            sniperBestRate = dayRate;
-                        }
+                        if (dayData.total >= 100 && dayRate >= 95) hasSniper = true;
+                        if (dayData.total > sniperBestTotal) { sniperBestTotal = dayData.total; sniperBestRate = dayRate; }
                     });
                 }
                 
@@ -1039,109 +983,82 @@
                 // 1. 🥚 初出茅廬
                 const badgeNovice = document.getElementById('badge-novice');
                 const progNovice = document.getElementById('badge-progress-novice');
-                if (maxSingleDayCorrect >= 10) {
-                    badgeNovice.className = "badge-item unlocked";
-                    progNovice.innerText = "已達成! 🎉";
-                } else {
-                    badgeNovice.className = "badge-item";
-                    progNovice.innerText = `${maxSingleDayCorrect}/10`;
-                }
+                if (maxSingleDayCorrect >= 10) { badgeNovice.className = "badge-item unlocked"; progNovice.innerText = "已達成! 🎉"; } 
+                else { badgeNovice.className = "badge-item"; progNovice.innerText = `${maxSingleDayCorrect}/10`; }
                 badgeNovice.setAttribute('data-tip', `條件：歷史單日全模式累計答對滿 10 題\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
 
-                // 2. 🔥 熟能生巧
+                // 🚀 2. 🔥 熟能生巧 (修正為：100、300、1000、2500、5000 題)
                 const badgeMaster = document.getElementById('badge-master');
+                const nameMaster = document.getElementById('badge-name-master');
                 const progMaster = document.getElementById('badge-progress-master');
-                if (maxSingleDayCorrect >= 300) {
-                    badgeMaster.className = "badge-item unlocked";
-                    progMaster.innerText = "已達成! 🎉";
+                
+                if (maxSingleDayCorrect >= 5000) {
+                    badgeMaster.className = "badge-item unlocked"; nameMaster.innerText = "熟能生巧 V"; progMaster.innerText = "已滿階! 🎉";
+                    badgeMaster.setAttribute('data-tip', `條件：單日累計答對題數\n階級：V 階 (滿階紀錄)\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
+                } else if (maxSingleDayCorrect >= 2500) {
+                    badgeMaster.className = "badge-item unlocked"; nameMaster.innerText = "熟能生巧 IV"; progMaster.innerText = `${maxSingleDayCorrect}/5000`;
+                    badgeMaster.setAttribute('data-tip', `條件：單日累計答對題數\n階級：IV 階 (下一階需 5000 題)\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
+                } else if (maxSingleDayCorrect >= 1000) {
+                    badgeMaster.className = "badge-item unlocked"; nameMaster.innerText = "熟能生巧 III"; progMaster.innerText = `${maxSingleDayCorrect}/2500`;
+                    badgeMaster.setAttribute('data-tip', `條件：單日累計答對題數\n階級：III 階 (下一階需 2500 題)\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
+                } else if (maxSingleDayCorrect >= 300) {
+                    badgeMaster.className = "badge-item unlocked"; nameMaster.innerText = "熟能生巧 II"; progMaster.innerText = `${maxSingleDayCorrect}/1000`;
+                    badgeMaster.setAttribute('data-tip', `條件：單日累計答對題數\n階級：II 階 (下一階需 1000 題)\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
+                } else if (maxSingleDayCorrect >= 100) {
+                    badgeMaster.className = "badge-item unlocked"; nameMaster.innerText = "熟能生巧 I"; progMaster.innerText = `${maxSingleDayCorrect}/300`;
+                    badgeMaster.setAttribute('data-tip', `條件：單日累計答對題數\n階級：I 階 (下一階需 300 題)\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
                 } else {
-                    badgeMaster.className = "badge-item";
-                    progMaster.innerText = `${maxSingleDayCorrect}/300`;
+                    badgeMaster.className = "badge-item"; nameMaster.innerText = "熟能生巧 I"; progMaster.innerText = `${maxSingleDayCorrect}/100`;
+                    badgeMaster.setAttribute('data-tip', `條件：歷史單日全模式累計答對滿 100 題解鎖 I 階\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
                 }
-                badgeMaster.setAttribute('data-tip', `條件：歷史單日全模式累計答對滿 300 題\n個人歷史單日最佳：${maxSingleDayCorrect} 題`);
 
                 // 3. 📅 持之以恆
                 const badgePioneer = document.getElementById('badge-pioneer');
                 const progPioneer = document.getElementById('badge-progress-pioneer');
-                if (greenDotsCount >= 6) {
-                    badgePioneer.className = "badge-item unlocked";
-                    progPioneer.innerText = "已達成! 🎉";
-                } else {
-                    badgePioneer.className = "badge-item";
-                    progPioneer.innerText = `${greenDotsCount}/6`;
-                }
+                if (greenDotsCount >= 6) { badgePioneer.className = "badge-item unlocked"; progPioneer.innerText = "已達成! 🎉"; } 
+                else { badgePioneer.className = "badge-item"; progPioneer.innerText = `${greenDotsCount}/6`; }
                 badgePioneer.setAttribute('data-tip', `條件：近 7 日足跡有 6 顆(或以上)綠球\n目前近 7 日已亮：${greenDotsCount} 顆球`);
 
                 // 4. 👑 突破極限
                 const badgeLimit = document.getElementById('badge-limit');
                 const progLimit = document.getElementById('badge-progress-limit');
-                if (historyMaxCorrect >= 32) {
-                    badgeLimit.className = "badge-item unlocked";
-                    progLimit.innerText = "已達成! 🎉";
-                } else {
-                    badgeLimit.className = "badge-item";
-                    progLimit.innerText = `${historyMaxCorrect}/32`;
-                }
+                if (historyMaxCorrect >= 32) { badgeLimit.className = "badge-item unlocked"; progLimit.innerText = "已達成! 🎉"; } 
+                else { badgeLimit.className = "badge-item"; progLimit.innerText = `${historyMaxCorrect}/32`; }
                 badgeLimit.setAttribute('data-tip', `條件：歷史挑戰賽單場答對滿 32 題以上\n目前個人最高單場：${historyMaxCorrect} 題`);
 
                 // 5. 🌟 登峰造極
                 const badgePerfect = document.getElementById('badge-perfect');
                 const progPerfect = document.getElementById('badge-progress-perfect');
-                if (hasHistoryPerfect) {
-                    badgePerfect.className = "badge-item unlocked";
-                    progPerfect.innerText = "已達成! 🎉";
-                } else {
-                    badgePerfect.className = "badge-item";
-                    progPerfect.innerText = "未達成";
-                }
+                if (hasHistoryPerfect) { badgePerfect.className = "badge-item unlocked"; progPerfect.innerText = "已達成! 🎉"; } 
+                else { badgePerfect.className = "badge-item"; progPerfect.innerText = "未達成"; }
                 badgePerfect.setAttribute('data-tip', `條件：歷史挑戰賽 100% 正確比率且答對題數大於 28 題\n目前個人最佳挑戰：答對 ${historyMaxCorrect} 題 (${sData ? sData.maxRate : 0}%)`);
 
                 // 6. ⚡ 閃電快手
                 const badgeSpeed = document.getElementById('badge-speed');
                 const progSpeed = document.getElementById('badge-progress-speed');
-                if (historyMaxCorrect >= 20) {
-                    badgeSpeed.className = "badge-item unlocked";
-                    progSpeed.innerText = "已達成! 🎉";
-                } else {
-                    badgeSpeed.className = "badge-item";
-                    progSpeed.innerText = `${historyMaxCorrect}/20`;
-                }
+                if (historyMaxCorrect >= 20) { badgeSpeed.className = "badge-item unlocked"; progSpeed.innerText = "已達成! 🎉"; } 
+                else { badgeSpeed.className = "badge-item"; progSpeed.innerText = `${historyMaxCorrect}/20`; }
                 badgeSpeed.setAttribute('data-tip', `條件：歷史挑戰賽單場答對滿 20 題以上\n目前個人最高單場：${historyMaxCorrect} 題`);
 
                 // 7. 📘 基礎奠基
                 const badgeBasic = document.getElementById('badge-basic');
                 const progBasic = document.getElementById('badge-progress-basic');
-                if (maxSingleDayBasic >= 200) {
-                    badgeBasic.className = "badge-item unlocked";
-                    progBasic.innerText = "已達成! 🎉";
-                } else {
-                    badgeBasic.className = "badge-item";
-                    progBasic.innerText = `${maxSingleDayBasic}/200`;
-                }
+                if (maxSingleDayBasic >= 200) { badgeBasic.className = "badge-item unlocked"; progBasic.innerText = "已達成! 🎉"; } 
+                else { badgeBasic.className = "badge-item"; progBasic.innerText = `${maxSingleDayBasic}/200`; }
                 badgeBasic.setAttribute('data-tip', `條件：歷史單日「基礎練習」累計答對滿 200 題\n個人單日基礎最高：${maxSingleDayBasic} 題`);
 
                 // 8. 🟢 勇於挑戰
                 const badgeAdvance = document.getElementById('badge-advance');
                 const progAdvance = document.getElementById('badge-progress-advance');
-                if (maxSingleDayAdvance >= 50) {
-                    badgeAdvance.className = "badge-item unlocked";
-                    progAdvance.innerText = "已達成! 🎉";
-                } else {
-                    badgeAdvance.className = "badge-item";
-                    progAdvance.innerText = `${maxSingleDayAdvance}/50`;
-                }
+                if (maxSingleDayAdvance >= 50) { badgeAdvance.className = "badge-item unlocked"; progAdvance.innerText = "已達成! 🎉"; } 
+                else { badgeAdvance.className = "badge-item"; progAdvance.innerText = `${maxSingleDayAdvance}/50`; }
                 badgeAdvance.setAttribute('data-tip', `條件：歷史單日「進階練習」累計答對滿 50 題\n個人單日進階最高：${maxSingleDayAdvance} 題`);
 
                 // 9. 🎯 精準射手
                 const badgeSniper = document.getElementById('badge-sniper');
                 const progSniper = document.getElementById('badge-progress-sniper');
-                if (hasSniper) {
-                    badgeSniper.className = "badge-item unlocked";
-                    progSniper.innerText = "已達成! 🎉";
-                } else {
-                    badgeSniper.className = "badge-item";
-                    progSniper.innerText = "未達成";
-                }
+                if (hasSniper) { badgeSniper.className = "badge-item unlocked"; progSniper.innerText = "已達成! 🎉"; } 
+                else { badgeSniper.className = "badge-item"; progSniper.innerText = "未達成"; }
                 badgeSniper.setAttribute('data-tip', `條件：歷史單日總答題 >= 100 題 且 正確率 >= 95%\n個人最接近紀錄：單日答 ${sniperBestTotal} 題 (正確率 ${sniperBestRate}%)`);
             }
 
@@ -1157,22 +1074,16 @@
                     if (b.weekActiveDays !== a.weekActiveDays) return b.weekActiveDays - a.weekActiveDays;
                     return b.weekTotalCorrect - a.weekTotalCorrect;
                 });
-            } 
-            else if (filterType === 'today') {
+            } else if (filterType === 'today') {
                 displayList = allStudents.filter(s => s.todayMaxCorrect > 0);
                 displayList.sort((a, b) => {
-                    if (b.todayMaxCorrect !== a.todayMaxCorrect) {
-                        return b.todayMaxCorrect - a.todayMaxCorrect;
-                    }
+                    if (b.todayMaxCorrect !== a.todayMaxCorrect) return b.todayMaxCorrect - a.todayMaxCorrect;
                     return b.todayRate - a.todayRate;
                 });
-            } 
-            else {
+            } else {
                 displayList = allStudents.filter(s => s.historyMaxCorrect > 0);
                 displayList.sort((a, b) => {
-                    if (b.historyMaxCorrect !== a.historyMaxCorrect) {
-                        return b.historyMaxCorrect - a.historyMaxCorrect;
-                    }
+                    if (b.historyMaxCorrect !== a.historyMaxCorrect) return b.historyMaxCorrect - a.historyMaxCorrect;
                     return b.maxRate - a.maxRate;
                 });
             }
@@ -1180,7 +1091,6 @@
             const tbody = document.getElementById(elementId);
             if (!tbody) return;
             tbody.innerHTML = '';
-
             const currentColspan = filterType === 'week' ? 4 : 5;
             if (displayList.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="${currentColspan}">目前尚無相關紀錄</td></tr>`;
@@ -1190,45 +1100,31 @@
             let limit = filterType === 'history' ? 500 : 100;
             displayList.slice(0, limit).forEach((record, index) => {
                 let rowClass = index === 0 ? 'class="top1"' : '';
-                
                 let displayName = record.name;
-                let centerTdContent = ''; 
-                let scoreText = '';
-                let rateTdHtml = ''; 
+                let centerTdContent = '', scoreText = '', rateTdHtml = ''; 
 
-                if (filterType === 'today') {
-                    displayName += `<span class="count-badge">(今練 ${record.todayCount} 次)</span>`;
-                } 
+                if (filterType === 'today') displayName += `<span class="count-badge">(今練 ${record.todayCount} 次)</span>`;
 
                 if (filterType === 'week') {
                     let dotsHtml = '<div class="dot-container">';
                     past7Days.forEach(d => {
                         let dayData = record.dayRecords[d];
-                        let score = dayData.correct;
-                        let total = dayData.total;
-                        let wrong = Math.max(0, total - score);
+                        let score = dayData.correct, total = dayData.total, wrong = Math.max(0, total - score);
                         let shortDate = d.substring(d.indexOf('/') + 1);
-                        
                         if (score > 0) {
                             let tipText = `${shortDate} 總計：答對 ${score} 題, 答錯 ${wrong} 題\n------------------------------`;
-                            
-                            let basicCount = dayData.basic.sessions.size;
-                            if (basicCount > 0) {
+                            if (dayData.basic.sessions.size > 0) {
                                 let rate = dayData.basic.total === 0 ? 0 : Math.round((dayData.basic.correct / dayData.basic.total) * 100);
-                                tipText += `\n📘 基礎: 練習 ${basicCount} 次, 答對 ${dayData.basic.correct} 題 (正確率 ${rate}%)`;
+                                tipText += `\n📘 基礎: 練習 ${dayData.basic.sessions.size} 次, 答對 ${dayData.basic.correct} 題 (${rate}%)`;
                             }
-                            let advCount = dayData.advanced.sessions.size;
-                            if (advCount > 0) {
+                            if (dayData.advanced.sessions.size > 0) {
                                 let rate = dayData.advanced.total === 0 ? 0 : Math.round((dayData.advanced.correct / dayData.advanced.total) * 100);
-                                tipText += `\n📗 進階: 練習 ${advCount} 次, 答對 ${dayData.advanced.correct} 題 (正確率 ${rate}%)`;
+                                tipText += `\n📗 進階: 練習 ${dayData.advanced.sessions.size} 次, 答對 ${dayData.advanced.correct} 題 (${rate}%)`;
                             }
-                            let contestCount = dayData.contest.sessions.size;
-                            if (contestCount > 0) {
+                            if (dayData.contest.sessions.size > 0) {
                                 let rate = dayData.contest.total === 0 ? 0 : Math.round((dayData.contest.correct / dayData.contest.total) * 100);
-                                let avgCorrect = (dayData.contest.correct / contestCount).toFixed(1);
-                                tipText += `\n⏱️ 挑戰: 練習 ${contestCount} 次, 答對 ${dayData.contest.correct} 題 (正確率 ${rate}% / 均對 ${avgCorrect} 題)`;
+                                tipText += `\n⏱️ 挑戰: 練習 ${dayData.contest.sessions.size} 次, 答對 ${dayData.contest.correct} 題 (${rate}%)`;
                             }
-
                             dotsHtml += `<span class="dot active" data-tip="${tipText}"></span>`;
                         } else {
                             dotsHtml += `<span class="dot" data-tip="${shortDate}: 未練習"></span>`;
@@ -1237,16 +1133,12 @@
                     dotsHtml += '</div>';
                     centerTdContent = dotsHtml + ` <span style="font-size:11px;color:#7f8c8d;">(${record.weekActiveDays}天)</span>`;
                     scoreText = `${record.weekTotalCorrect} 題`;
-                    rateTdHtml = ''; 
-                } 
-                else if (filterType === 'today') {
+                } else if (filterType === 'today') {
                     centerTdContent = `<span style="font-size:12px;color:#7f8c8d;">${record.todayTime}</span>`;
                     scoreText = `${record.todayMaxCorrect} 題`;
                     rateTdHtml = `<td style="font-weight:bold; color:#2980b9;">${record.todayRate}%</td>`;
-                } 
-                else {
-                    let shortTime = record.maxTime.replace(/^\d{4}\//, ""); 
-                    centerTdContent = `<span style="font-size:12px;color:#7f8c8d;">${shortTime}</span>`;
+                } else {
+                    centerTdContent = `<span style="font-size:12px;color:#7f8c8d;">${record.maxTime.replace(/^\d{4}\//, "")}</span>`;
                     scoreText = `${record.historyMaxCorrect} 題`;
                     rateTdHtml = `<td style="font-weight:bold; color:#2980b9;">${record.maxRate}%</td>`;
                 }
@@ -1270,15 +1162,10 @@
         const nowString = new Date().toLocaleString('zh-TW', { hour12: false });
 
         database.ref('contest_records/' + timestamp).set({
-            name: currentData.name,
-            correct: currentData.correct,
-            total: currentData.total,
-            time: nowString,
-            mode: '挑戰',
-            sessionId: currentSessionId
+            name: currentData.name, correct: currentData.correct, total: currentData.total,
+            time: nowString, mode: '挑戰', sessionId: currentSessionId
         }).then(() => {
-            let currentResultTab = currentTabs['result'];
-            loadLeaderboardData('result-leaderboard-body', currentResultTab);
+            loadLeaderboardData('result-leaderboard-body', currentTabs['result']);
         });
     }
 </script>
