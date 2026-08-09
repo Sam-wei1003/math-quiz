@@ -55,12 +55,6 @@
         }
         .btn-login { background-color: #2ecc71; font-weight: bold; font-size: 20px; padding: 12px 30px; }
         .btn-login:hover { background-color: #27ae60; }
-        .btn-basic { background-color: #3498db; }
-        .btn-basic:hover { background-color: #2980b9; }
-        .btn-advance { background-color: #9b59b6; }
-        .btn-advance:hover { background-color: #8e44ad; }
-        .btn-contest { background-color: #e74c3c; font-weight: bold; }
-        .btn-contest:hover { background-color: #c0392b; }
         .btn-submit { background-color: #27ae60; }
         .btn-submit:hover { background-color: #219653; }
         .btn-nav { background-color: #95a5a6; }
@@ -196,6 +190,7 @@
         .card-basic { background-color: #3498db; }
         .card-advance { background-color: #9b59b6; }
         .card-contest { background-color: #e74c3c; border: 2px dashed #f1c40f; }
+        .card-contest-adv { background-color: #d35400; border: 2px dashed #f39c12; }
 
         .timer-box {
             font-size: 26px;
@@ -239,6 +234,12 @@
         .tab-container {
             display: flex;
             justify-content: center;
+            margin-bottom: 8px;
+            gap: 5px;
+        }
+        .sub-tab-container {
+            display: flex;
+            justify-content: center;
             margin-bottom: 12px;
             gap: 5px;
         }
@@ -259,6 +260,23 @@
             background-color: #e67e22;
             color: white;
             border-color: #d35400;
+        }
+        .sub-tab-btn {
+            font-size: 12px;
+            padding: 4px 12px;
+            background-color: #f5eed5;
+            color: #7d6608;
+            border: 1px solid #f1c40f;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+            margin: 0;
+        }
+        .sub-tab-btn.active {
+            background-color: #d35400;
+            color: white;
+            border-color: #a04000;
         }
         
         .leaderboard-scroll {
@@ -361,7 +379,10 @@
         <div style="background-color: #ebf5fb; border-left: 5px solid #3498db; border-radius: 8px; padding: 15px; text-align: left; max-width: 80%; margin: 0 auto;">
             <h3 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; display: flex; align-items: center; gap: 5px;">🛠️ 最近更新項目</h3>
             <ul style="margin: 0; padding-left: 20px; color: #566573; font-size: 14px; line-height: 1.6; font-weight: bold;">
-                <li>基礎練習新增絕對值運算題型 (佔比 30%)</li>                
+                <li>新增「1分鐘進階挑戰賽 (含絕對值)」模式</li>
+                <li>基礎練習新增絕對值運算題型 (佔比 30%)</li>
+                <li>排行榜分頁支援「普通挑戰」與「進階挑戰」獨立展示</li>
+                <li>一週勤奮榜足跡完整記錄 4 大模式數據</li>
             </ul>
         </div>
     </div>
@@ -433,9 +454,10 @@
         </div>
 
         <div class="mode-selection">
-            <div onclick="startGame('basic')" class="mode-card card-basic">🟢 基礎練習 (不限時/2個數)</div>
+            <div onclick="startGame('basic')" class="mode-card card-basic">🟢 基礎練習 (不限時/2個數/含絕對值)</div>
             <div onclick="startGame('advanced')" class="mode-card card-advance">🟣 進階練習 (不限時/3個數)</div>
             <div onclick="startGame('contest')" class="mode-card card-contest">⏱️ 1分鐘限時挑戰賽</div>
+            <div onclick="startGame('contest_advanced')" class="mode-card card-contest-adv">🔥 1分鐘進階挑戰賽 (含絕對值)</div>
         </div>
 
         <div class="leaderboard">
@@ -443,6 +465,11 @@
                 <button id="tab-home-week" class="tab-btn active" onclick="switchTab('home', 'week')">🔥 一週勤奮榜</button>
                 <button id="tab-home-today" class="tab-btn" onclick="switchTab('home', 'today')">📅 今日即時榜</button>
                 <button id="tab-home-history" class="tab-btn" onclick="switchTab('home', 'history')">📜 歷史總排行</button>
+            </div>
+            
+            <div id="sub-tab-home" class="sub-tab-container hidden">
+                <button id="subtab-home-contest" class="sub-tab-btn active" onclick="switchSubTab('home', 'contest')">⏱️ 普通挑戰</button>
+                <button id="subtab-home-contest_advanced" class="sub-tab-btn" onclick="switchSubTab('home', 'contest_advanced')">🔥 進階挑戰</button>
             </div>
             
             <div class="leaderboard-scroll">
@@ -512,6 +539,11 @@
                 <button id="tab-result-history" class="tab-btn" onclick="switchTab('result', 'history')">📜 歷史總排行</button>
             </div>
 
+            <div id="sub-tab-result" class="sub-tab-container hidden">
+                <button id="subtab-result-contest" class="sub-tab-btn active" onclick="switchSubTab('result', 'contest')">⏱️ 普通挑戰</button>
+                <button id="subtab-result-contest_advanced" class="sub-tab-btn" onclick="switchSubTab('result', 'contest_advanced')">🔥 進階挑戰</button>
+            </div>
+
             <div class="leaderboard-scroll">
                 <table class="rank-table">
                     <thead>
@@ -556,6 +588,7 @@
     let timeLeft = 60;
     let timerInterval = null;
     let currentTabs = { home: 'week', result: 'week' };
+    let currentSubTabs = { home: 'contest', result: 'contest' };
 
     let practiceBuffer = { correct: 0, total: 0 };
     let currentSessionId = "";
@@ -584,6 +617,13 @@
         document.getElementById(`tab-${stage}-history`).classList.remove('active');
         document.getElementById(`tab-${stage}-${type}`).classList.add('active');
         
+        const subTabContainer = document.getElementById(`sub-tab-${stage}`);
+        if (type === 'today' || type === 'history') {
+            subTabContainer.classList.remove('hidden');
+        } else {
+            subTabContainer.classList.add('hidden');
+        }
+
         const nameTh = document.getElementById(stage === 'home' ? 'th-home-name' : 'th-result-name');
         const centerTh = document.getElementById(stage === 'home' ? 'th-header-type' : 'th-result-header-type');
         const scoreTh = document.getElementById(stage === 'home' ? 'th-home-score' : 'th-result-score');
@@ -604,7 +644,16 @@
             scoreTh.style.width = "13%";
         }
 
-        loadLeaderboardData(`${stage}-leaderboard-body`, type);
+        loadLeaderboardData(`${stage}-leaderboard-body`, type, currentSubTabs[stage]);
+    }
+
+    function switchSubTab(stage, modeType) {
+        currentSubTabs[stage] = modeType;
+        document.getElementById(`subtab-${stage}-contest`).classList.remove('active');
+        document.getElementById(`subtab-${stage}-contest_advanced`).classList.remove('active');
+        document.getElementById(`subtab-${stage}-${modeType}`).classList.add('active');
+
+        loadLeaderboardData(`${stage}-leaderboard-body`, currentTabs[stage], modeType);
     }
 
     function startGame(mode) {
@@ -631,12 +680,13 @@
         
         let modeTitle = '基礎練習';
         if(currentData.mode === 'advanced') modeTitle = '進階練習';
-        if(currentData.mode === 'contest') modeTitle = '⏱️ 1分鐘競賽';
+        if(currentData.mode === 'contest') modeTitle = '⏱️ 1分鐘挑戰';
+        if(currentData.mode === 'contest_advanced') modeTitle = '🔥 1分鐘進階挑戰';
         document.getElementById('lbl-mode').innerText = modeTitle;
 
         clearInterval(timerInterval);
 
-        if (currentData.mode === 'contest') {
+        if (currentData.mode === 'contest' || currentData.mode === 'contest_advanced') {
             document.getElementById('timer-wrapper').classList.remove('hidden');
             document.getElementById('wrong-box-title').innerHTML = `嘗試次數: <span id="lbl-wrong">0</span> 次`;
             document.getElementById('timer-sec').innerText = "60";
@@ -650,7 +700,7 @@
         document.getElementById('result-stage').classList.add('hidden');
         document.getElementById('quiz-stage').classList.remove('hidden');
 
-        if (currentData.mode === 'contest') {
+        if (currentData.mode === 'contest' || currentData.mode === 'contest_advanced') {
             document.getElementById('user-answer').disabled = true;
             document.getElementById('btn-submit').disabled = true;
             document.getElementById('user-answer').placeholder = "等待倒數結束...";
@@ -719,12 +769,11 @@
         document.getElementById('btn-submit').disabled = false;
 
         let qText = '';
-        if (currentData.mode === 'basic' || currentData.mode === 'contest') {
-            // 30% 機率產生絕對值題型，70% 產生原本的基礎題型
+        if (currentData.mode === 'basic' || currentData.mode === 'contest_advanced') {
+            // 基礎練習 & 1分鐘進階挑戰：30% 絕對值題型，70% 原基礎題型
             const isAbsoluteValType = Math.random() < 0.3;
 
             if (isAbsoluteValType) {
-                // --- 30% 絕對值題型 ---
                 let a = getRandomNumWithoutZero();
                 let b = getRandomNumWithoutZero();
                 const absType = Math.floor(Math.random() * 4) + 1;
@@ -750,12 +799,17 @@
                         break;
                 }
             } else {
-                // --- 70% 原有基礎題型 ---
                 let n1, n2, op;
                 do { n1 = getRandomNumWithoutZero(); n2 = getRandomNumWithoutZero(); op = getRandomOp(); } while (isSimpleQuiz(n1, op, n2));
                 qText = `${formatNum(n1)} ${op} ${formatNum(n2)} = ?`;
                 currentAnswer = op === '+' ? n1 + n2 : n1 - n2;
             }
+        } else if (currentData.mode === 'contest') {
+            // 1分鐘挑戰（普通）：100% 純基礎題目（不含絕對值）
+            let n1, n2, op;
+            do { n1 = getRandomNumWithoutZero(); n2 = getRandomNumWithoutZero(); op = getRandomOp(); } while (isSimpleQuiz(n1, op, n2));
+            qText = `${formatNum(n1)} ${op} ${formatNum(n2)} = ?`;
+            currentAnswer = op === '+' ? n1 + n2 : n1 - n2;
         } else if (currentData.mode === 'advanced') {
             let n1, n2, n3, op1, op2, temp;
             do { n1 = getRandomNumWithoutZero(); n2 = getRandomNumWithoutZero(); op1 = getRandomOp(); } while (isSimpleQuiz(n1, op1, n2));
@@ -768,7 +822,8 @@
     }
 
     function checkAnswer() {
-        if (currentData.mode !== 'contest' && isWaitingForNext) return;
+        const isContest = (currentData.mode === 'contest' || currentData.mode === 'contest_advanced');
+        if (!isContest && isWaitingForNext) return;
         const userInput = document.getElementById('user-answer').value;
         if (userInput === '') { alert('請輸入答案！'); return; }
 
@@ -777,7 +832,7 @@
         const feedbackEl = document.getElementById('feedback-text');
         const ansInput = document.getElementById('user-answer');
 
-        if (currentData.mode === 'contest') {
+        if (isContest) {
             if (userAnswer === currentAnswer) {
                 currentData.correct++;
                 feedbackEl.innerText = '⭕ 答對了！';
@@ -834,7 +889,8 @@
     function updateScoreboard() {
         document.getElementById('lbl-correct').innerText = currentData.correct;
         document.getElementById('lbl-total').innerText = currentData.total;
-        if (currentData.mode === 'contest') document.getElementById('lbl-wrong').innerText = currentData.total; 
+        const isContest = (currentData.mode === 'contest' || currentData.mode === 'contest_advanced');
+        if (isContest) document.getElementById('lbl-wrong').innerText = currentData.total; 
         else document.getElementById('lbl-wrong').innerText = currentData.wrong; 
         let rate = currentData.total === 0 ? 0 : Math.round((currentData.correct / currentData.total) * 100);
         document.getElementById('lbl-rate').innerText = rate;
@@ -854,15 +910,17 @@
 
     document.addEventListener('keydown', function(event) {
         if (document.getElementById('quiz-stage').classList.contains('hidden')) return;
-        if (event.key === 'Enter') { if (currentData.mode === 'contest' || !isWaitingForNext) { checkAnswer(); } } 
+        const isContest = (currentData.mode === 'contest' || currentData.mode === 'contest_advanced');
+        if (event.key === 'Enter') { if (isContest || !isWaitingForNext) { checkAnswer(); } } 
         else if (event.key === ' ' || event.code === 'Space') {
-            if (currentData.mode !== 'contest' && isWaitingForNext) { event.preventDefault(); generateQuestion(); }
+            if (!isContest && isWaitingForNext) { event.preventDefault(); generateQuestion(); }
         }
     });
 
     function exitGame() {
         clearInterval(timerInterval);
-        if (currentData.mode !== 'contest' && practiceBuffer.total > 0) savePracticeBatch();
+        const isContest = (currentData.mode === 'contest' || currentData.mode === 'contest_advanced');
+        if (!isContest && practiceBuffer.total > 0) savePracticeBatch();
         document.getElementById('quiz-stage').classList.add('hidden');
         document.getElementById('result-stage').classList.add('hidden');
         document.getElementById('lobby-stage').classList.remove('hidden');
@@ -879,7 +937,7 @@
         return dates;
     }
 
-    function loadLeaderboardData(elementId, filterType) {
+    function loadLeaderboardData(elementId, filterType, subMode) {
         if (!database) return;
         database.ref('contest_records').once('value', (snapshot) => {
             const todayStr = new Date().toLocaleDateString('zh-TW');
@@ -899,11 +957,10 @@
                 if (!studentMap[name]) {
                     studentMap[name] = {
                         name: name,
-                        historyMaxCorrect: 0, totalAnsOfMax: 0, maxRate: 0, maxTime: '',
-                        historyTotalCount: 0,
+                        contest: { historyMaxCorrect: 0, totalAnsOfMax: 0, maxRate: 0, maxTime: '', historyTotalCount: 0, todayMaxCorrect: 0, todayTotalAns: 0, todayRate: 0, todayTime: '', todayCount: 0 },
+                        contest_advanced: { historyMaxCorrect: 0, totalAnsOfMax: 0, maxRate: 0, maxTime: '', historyTotalCount: 0, todayMaxCorrect: 0, todayTotalAns: 0, todayRate: 0, todayTime: '', todayCount: 0 },
                         historyTotalCorrect: 0, 
-                        todayMaxCorrect: 0, todayTotalAns: 0, todayRate: 0, todayTime: '',
-                        todayCount: 0, weekActiveDays: 0, weekTotalCorrect: 0,
+                        weekActiveDays: 0, weekTotalCorrect: 0,
                         dayRecords: {}, allDaysMap: {}
                     };
                     past7Days.forEach(d => {
@@ -911,13 +968,13 @@
                             correct: 0, total: 0,
                             basic: { correct: 0, total: 0, sessions: new Set() },
                             advanced: { correct: 0, total: 0, sessions: new Set() },
-                            contest: { correct: 0, total: 0, sessions: new Set() }
+                            contest: { correct: 0, total: 0, sessions: new Set() },
+                            contest_advanced: { correct: 0, total: 0, sessions: new Set() }
                         };
                     });
                 }
 
                 let s = studentMap[name];
-                
                 s.historyTotalCorrect += correct;
 
                 if (datePart) {
@@ -942,28 +999,34 @@
                         s.dayRecords[datePart].advanced.correct += correct;
                         s.dayRecords[datePart].advanced.total += total;
                         s.dayRecords[datePart].advanced.sessions.add(sessionKey);
-                    } else {
+                    } else if (recordMode === '進階挑戰') {
+                        s.dayRecords[datePart].contest_advanced.correct += correct;
+                        s.dayRecords[datePart].contest_advanced.total += total;
+                        s.dayRecords[datePart].contest_advanced.sessions.add(sessionKey);
+                    } else { // '挑戰' 或舊數據
                         s.dayRecords[datePart].contest.correct += correct;
                         s.dayRecords[datePart].contest.total += total;
                         s.dayRecords[datePart].contest.sessions.add(sessionKey);
                     }
                 }
 
-                if (recordMode === '挑戰') {
-                    s.historyTotalCount++;
-                    if (correct > s.historyMaxCorrect || (correct === s.historyMaxCorrect && (correct/total) > (s.historyMaxCorrect/s.totalAnsOfMax))) {
-                        s.historyMaxCorrect = correct;
-                        s.totalAnsOfMax = total;
-                        s.maxRate = Math.round((correct / total) * 100);
-                        s.maxTime = timeStr;
+                if (recordMode === '挑戰' || recordMode === '進階挑戰') {
+                    let targetKey = (recordMode === '進階挑戰') ? 'contest_advanced' : 'contest';
+                    let cData = s[targetKey];
+                    cData.historyTotalCount++;
+                    if (correct > cData.historyMaxCorrect || (correct === cData.historyMaxCorrect && (correct/total) > (cData.historyMaxCorrect/cData.totalAnsOfMax))) {
+                        cData.historyMaxCorrect = correct;
+                        cData.totalAnsOfMax = total;
+                        cData.maxRate = Math.round((correct / total) * 100);
+                        cData.maxTime = timeStr;
                     }
                     if (timeStr.startsWith(todayStr)) {
-                        s.todayCount++;
-                        if (correct > s.todayMaxCorrect || (correct === s.todayMaxCorrect && (correct/total) > (s.todayMaxCorrect/s.todayTotalAns))) {
-                            s.todayMaxCorrect = correct;
-                            s.todayTotalAns = total;
-                            s.todayRate = Math.round((correct / total) * 100);
-                            s.todayTime = timeStr.includes(' ') ? timeStr.split(' ')[1] : timeStr;
+                        cData.todayCount++;
+                        if (correct > cData.todayMaxCorrect || (correct === cData.todayMaxCorrect && (correct/total) > (cData.todayMaxCorrect/cData.todayTotalAns))) {
+                            cData.todayMaxCorrect = correct;
+                            cData.todayTotalAns = total;
+                            cData.todayRate = Math.round((correct / total) * 100);
+                            cData.todayTime = timeStr.includes(' ') ? timeStr.split(' ')[1] : timeStr;
                         }
                     }
                 }
@@ -986,10 +1049,12 @@
                 let globalTotalCorrect = sData ? sData.historyTotalCorrect : 0;
 
                 if (sData) {
-                    todayCount = sData.todayCount;
-                    historyMaxCorrect = sData.historyMaxCorrect;
+                    todayCount = sData.contest.todayCount + sData.contest_advanced.todayCount;
+                    historyMaxCorrect = Math.max(sData.contest.historyMaxCorrect, sData.contest_advanced.historyMaxCorrect);
                     greenDotsCount = sData.weekActiveDays;
-                    if (sData.maxRate === 100 && sData.historyMaxCorrect > 28) hasHistoryPerfect = true;
+                    if ((sData.contest.maxRate === 100 && sData.contest.historyMaxCorrect > 28) || (sData.contest_advanced.maxRate === 100 && sData.contest_advanced.historyMaxCorrect > 28)) {
+                        hasHistoryPerfect = true;
+                    }
                     if (sData.dayRecords[todayStr]) {
                         todayBasicCorrect = sData.dayRecords[todayStr].basic.correct;
                         todayAdvanceCorrect = sData.dayRecords[todayStr].advanced.correct;
@@ -1061,7 +1126,8 @@
                 const progPerfect = document.getElementById('badge-progress-perfect');
                 if (hasHistoryPerfect) { badgePerfect.className = "badge-item unlocked"; progPerfect.innerText = "已達成! 🎉"; } 
                 else { badgePerfect.className = "badge-item"; progPerfect.innerText = "未達成"; }
-                badgePerfect.setAttribute('data-tip', `條件：歷史挑戰賽 100% 正確比率且答對題數大於 28 題\n目前個人最佳挑戰：答對 ${historyMaxCorrect} 題 (${sData ? sData.maxRate : 0}%)`);
+                let bestRate = sData ? Math.max(sData.contest.maxRate, sData.contest_advanced.maxRate) : 0;
+                badgePerfect.setAttribute('data-tip', `條件：歷史挑戰賽 100% 正確比率且答對題數大於 28 題\n目前個人最佳挑戰：答對 ${historyMaxCorrect} 題 (${bestRate}%)`);
 
                 // 6. ⚡ 閃電快手
                 const badgeSpeed = document.getElementById('badge-speed');
@@ -1093,6 +1159,8 @@
             }
 
             let displayList = [];
+            const subKey = subMode || 'contest';
+
             if (filterType === 'week') {
                 allStudents.forEach(s => {
                     let total7DaysCorrect = 0;
@@ -1105,16 +1173,16 @@
                     return b.weekTotalCorrect - a.weekTotalCorrect;
                 });
             } else if (filterType === 'today') {
-                displayList = allStudents.filter(s => s.todayMaxCorrect > 0);
+                displayList = allStudents.filter(s => s[subKey].todayMaxCorrect > 0);
                 displayList.sort((a, b) => {
-                    if (b.todayMaxCorrect !== a.todayMaxCorrect) return b.todayMaxCorrect - a.todayMaxCorrect;
-                    return b.todayRate - a.todayRate;
+                    if (b[subKey].todayMaxCorrect !== a[subKey].todayMaxCorrect) return b[subKey].todayMaxCorrect - a[subKey].todayMaxCorrect;
+                    return b[subKey].todayRate - a[subKey].todayRate;
                 });
             } else {
-                displayList = allStudents.filter(s => s.historyMaxCorrect > 0);
+                displayList = allStudents.filter(s => s[subKey].historyMaxCorrect > 0);
                 displayList.sort((a, b) => {
-                    if (b.historyMaxCorrect !== a.historyMaxCorrect) return b.historyMaxCorrect - a.historyMaxCorrect;
-                    return b.maxRate - a.maxRate;
+                    if (b[subKey].historyMaxCorrect !== a[subKey].historyMaxCorrect) return b[subKey].historyMaxCorrect - a[subKey].historyMaxCorrect;
+                    return b[subKey].maxRate - a[subKey].maxRate;
                 });
             }
 
@@ -1133,7 +1201,9 @@
                 let displayName = record.name;
                 let centerTdContent = '', scoreText = '', rateTdHtml = ''; 
 
-                if (filterType === 'today') displayName += `<span class="count-badge">(今練 ${record.todayCount} 次)</span>`;
+                let cData = record[subKey];
+
+                if (filterType === 'today') displayName += `<span class="count-badge">(今練 ${cData.todayCount} 次)</span>`;
 
                 if (filterType === 'week') {
                     let dotsHtml = '<div class="dot-container">';
@@ -1155,6 +1225,10 @@
                                 let rate = dayData.contest.total === 0 ? 0 : Math.round((dayData.contest.correct / dayData.contest.total) * 100);
                                 tipText += `\n⏱️ 挑戰: 練習 ${dayData.contest.sessions.size} 次, 答對 ${dayData.contest.correct} 題 (${rate}%)`;
                             }
+                            if (dayData.contest_advanced.sessions.size > 0) {
+                                let rate = dayData.contest_advanced.total === 0 ? 0 : Math.round((dayData.contest_advanced.correct / dayData.contest_advanced.total) * 100);
+                                tipText += `\n⚡ 進階挑戰: 練習 ${dayData.contest_advanced.sessions.size} 次, 答對 ${dayData.contest_advanced.correct} 題 (${rate}%)`;
+                            }
                             dotsHtml += `<span class="dot active" data-tip="${tipText}"></span>`;
                         } else {
                             dotsHtml += `<span class="dot" data-tip="${shortDate}: 未練習"></span>`;
@@ -1164,13 +1238,13 @@
                     centerTdContent = dotsHtml + ` <span style="font-size:11px;color:#7f8c8d;">(${record.weekActiveDays}天)</span>`;
                     scoreText = `${record.weekTotalCorrect} 題`;
                 } else if (filterType === 'today') {
-                    centerTdContent = `<span style="font-size:12px;color:#7f8c8d;">${record.todayTime}</span>`;
-                    scoreText = `${record.todayMaxCorrect} 題`;
-                    rateTdHtml = `<td style="font-weight:bold; color:#2980b9;">${record.todayRate}%</td>`;
+                    centerTdContent = `<span style="font-size:12px;color:#7f8c8d;">${cData.todayTime}</span>`;
+                    scoreText = `${cData.todayMaxCorrect} 題`;
+                    rateTdHtml = `<td style="font-weight:bold; color:#2980b9;">${cData.todayRate}%</td>`;
                 } else {
-                    centerTdContent = `<span style="font-size:12px;color:#7f8c8d;">${record.maxTime.replace(/^\d{4}\//, "")}</span>`;
-                    scoreText = `${record.historyMaxCorrect} 題`;
-                    rateTdHtml = `<td style="font-weight:bold; color:#2980b9;">${record.maxRate}%</td>`;
+                    centerTdContent = `<span style="font-size:12px;color:#7f8c8d;">${cData.maxTime.replace(/^\d{4}\//, "")}</span>`;
+                    scoreText = `${cData.historyMaxCorrect} 題`;
+                    rateTdHtml = `<td style="font-weight:bold; color:#2980b9;">${cData.maxRate}%</td>`;
                 }
 
                 tbody.innerHTML += `
@@ -1190,12 +1264,15 @@
         if (!database) return;
         const timestamp = new Date().getTime();
         const nowString = new Date().toLocaleString('zh-TW', { hour12: false });
+        let modeLabel = (currentData.mode === 'contest_advanced') ? '進階挑戰' : '挑戰';
 
         database.ref('contest_records/' + timestamp).set({
             name: currentData.name, correct: currentData.correct, total: currentData.total,
-            time: nowString, mode: '挑戰', sessionId: currentSessionId
+            time: nowString, mode: modeLabel, sessionId: currentSessionId
         }).then(() => {
-            loadLeaderboardData('result-leaderboard-body', currentTabs['result']);
+            let targetSubMode = (currentData.mode === 'contest_advanced') ? 'contest_advanced' : 'contest';
+            currentSubTabs['result'] = targetSubMode;
+            switchSubTab('result', targetSubMode);
         });
     }
 </script>
