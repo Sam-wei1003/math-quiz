@@ -9,7 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    <style>
+  <style>
         body {
             font-family: 'Arial', sans-serif;
             background-color: #f0f4f8;
@@ -168,7 +168,7 @@
             opacity: 1;
         }
 
-        /* 模式選擇卡片 */
+        /* 模式選擇卡片 (改為提案一：難度漸進色) */
         .mode-selection {
             display: flex;
             flex-direction: column;
@@ -178,19 +178,21 @@
         .mode-card {
             padding: 15px;
             border-radius: 8px;
-            border: 2px solid transparent;
+            border: none; /* 移除舊有的虛線邊框 */
             cursor: pointer;
             transition: 0.2s;
             color: white;
             font-size: 18px;
             font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.12); /* 質感陰影 */
         }
-        .mode-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
-        .card-basic { background-color: #3498db; }
-        .card-advance { background-color: #9b59b6; }
-        .card-contest { background-color: #e74c3c; border: 2px dashed #f1c40f; }
-        .card-contest-adv { background-color: #d35400; border: 2px dashed #f39c12; }
+        .mode-card:hover { transform: translateY(-2px); box-shadow: 0 5px 12px rgba(0,0,0,0.2); }
+        
+        /* 4 顆按鈕獨立顏色 */
+        .card-basic { background-color: #4CAF50; }       /* 1. 基礎練習：柔和草綠 */
+        .card-advance { background-color: #2196F3; }     /* 2. 進階練習：質感蔚藍 */
+        .card-contest { background-color: #FF9800; }     /* 3. 1分鐘限時挑戰：活力亮橘 */
+        .card-contest-adv { background-color: #E53935; } /* 4. 1分鐘進階挑戰：熾熱火山紅 */
 
         .timer-box {
             font-size: 26px;
