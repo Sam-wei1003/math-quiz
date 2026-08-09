@@ -761,7 +761,7 @@
         return false;
     }
 
-    function generateQuestion() {
+   function generateQuestion() {
         isWaitingForNext = false;
         document.getElementById('feedback-text').className = 'feedback';
         document.getElementById('feedback-text').innerText = '';
@@ -771,8 +771,8 @@
         document.getElementById('btn-submit').disabled = false;
 
         let qText = '';
-        if (currentData.mode === 'basic' || currentData.mode === 'contest_advanced') {
-            // 基礎練習 & 1分鐘進階挑戰：30% 絕對值題型，70% 原基礎題型
+        if (currentData.mode === 'basic') {
+            // 基礎練習：30% 絕對值題型，70% 原基礎題型
             const isAbsoluteValType = Math.random() < 0.3;
 
             if (isAbsoluteValType) {
@@ -806,13 +806,61 @@
                 qText = `${formatNum(n1)} ${op} ${formatNum(n2)} = ?`;
                 currentAnswer = op === '+' ? n1 + n2 : n1 - n2;
             }
+        } else if (currentData.mode === 'contest_advanced') {
+            // 🔥 🔥 🔥 1分鐘進階挑戰：加入乘法與整除除法
+            // 25% 絕對值, 25% 加減法, 50% 正負數乘除法 (乘法與整除各佔一半)
+            const typeRoll = Math.random();
+
+            if (typeRoll < 0.25) {
+                // 1. 絕對值題型 (25%)
+                let a = getRandomNumWithoutZero();
+                let b = getRandomNumWithoutZero();
+                const absType = Math.floor(Math.random() * 4) + 1;
+                const absA = Math.abs(a);
+                const absB = Math.abs(b);
+
+                switch (absType) {
+                    case 1: qText = `| ${a} | + | ${b} | = ?`; currentAnswer = absA + absB; break;
+                    case 2: qText = `| ${a} | - | ${b} | = ?`; currentAnswer = absA - absB; break;
+                    case 3: qText = `-| ${a} | + | ${b} | = ?`; currentAnswer = -absA + absB; break;
+                    case 4: qText = `-| ${a} | - | ${b} | = ?`; currentAnswer = -absA - absB; break;
+                }
+            } else if (typeRoll < 0.75) {
+                // 2. 基本加減法題型 (50%)
+                let n1, n2, op;
+                do { n1 = getRandomNumWithoutZero(); n2 = getRandomNumWithoutZero(); op = getRandomOp(); } while (isSimpleQuiz(n1, op, n2));
+                qText = `${formatNum(n1)} ${op} ${formatNum(n2)} = ?`;
+                currentAnswer = op === '+' ? n1 + n2 : n1 - n2;
+            } else {
+                // 3. 正負數乘除法題型 (25%)
+                let a = getRandomNumWithoutZero();
+                let b = getRandomNumWithoutZero();
+                let c = a * b; // 利用 a * b = c 結構，保證除法 100% 整除
+
+                let isDivision = Math.random() < 0.5; // 隨機 0 或 1 (true: 出除法, false: 出乘法)
+
+                if (!isDivision) {
+                    // ✖️ 乘法：a × b = ?
+                    qText = `${formatNum(a)} × ${formatNum(b)} = ?`;
+                    currentAnswer = c;
+                } else {
+                    // ➗ 除法：c ÷ a = b  或  c ÷ b = a (再隨機抽除數)
+                    let useAAsDivisor = Math.random() < 0.5;
+                    let divisor = useAAsDivisor ? a : b;
+                    let expectedAns = useAAsDivisor ? b : a;
+
+                    qText = `${formatNum(c)} ÷ ${formatNum(divisor)} = ?`;
+                    currentAnswer = expectedAns;
+                }
+            }
         } else if (currentData.mode === 'contest') {
-            // 1分鐘挑戰（普通）：100% 純基礎題目（不含絕對值）
+            // 1分鐘挑戰（普通）：100% 純基礎題目（不含絕對值與乘除）
             let n1, n2, op;
             do { n1 = getRandomNumWithoutZero(); n2 = getRandomNumWithoutZero(); op = getRandomOp(); } while (isSimpleQuiz(n1, op, n2));
             qText = `${formatNum(n1)} ${op} ${formatNum(n2)} = ?`;
             currentAnswer = op === '+' ? n1 + n2 : n1 - n2;
         } else if (currentData.mode === 'advanced') {
+            // 進階練習：3個數連續加減
             let n1, n2, n3, op1, op2, temp;
             do { n1 = getRandomNumWithoutZero(); n2 = getRandomNumWithoutZero(); op1 = getRandomOp(); } while (isSimpleQuiz(n1, op1, n2));
             temp = op1 === '+' ? n1 + n2 : n1 - n2;
