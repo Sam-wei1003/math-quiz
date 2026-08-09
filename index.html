@@ -1213,28 +1213,32 @@
                         let dayData = record.dayRecords[d];
                         let score = dayData.correct, total = dayData.total, wrong = Math.max(0, total - score);
                         let shortDate = d.substring(d.indexOf('/') + 1);
-                        if (score > 0) {
-                            let tipText = `${shortDate} 總計：答對 ${score} 題, 答錯 ${wrong} 題\n------------------------------`;
-                            if (dayData.basic.sessions.size > 0) {
-                                let rate = dayData.basic.total === 0 ? 0 : Math.round((dayData.basic.correct / dayData.basic.total) * 100);
-                                tipText += `\n📘 基礎: 練習 ${dayData.basic.sessions.size} 次, 答對 ${dayData.basic.correct} 題 (${rate}%)`;
-                            }
-                            if (dayData.advanced.sessions.size > 0) {
-                                let rate = dayData.advanced.total === 0 ? 0 : Math.round((dayData.advanced.correct / dayData.advanced.total) * 100);
-                                tipText += `\n📗 進階: 練習 ${dayData.advanced.sessions.size} 次, 答對 ${dayData.advanced.correct} 題 (${rate}%)`;
-                            }
-                            if (dayData.contest.sessions.size > 0) {
-                                let rate = dayData.contest.total === 0 ? 0 : Math.round((dayData.contest.correct / dayData.contest.total) * 100);
-                                tipText += `\n⏱️ 挑戰: 練習 ${dayData.contest.sessions.size} 次, 答對 ${dayData.contest.correct} 題 (${rate}%)`;
-                            }
-                            if (dayData.contest_advanced.sessions.size > 0) {
-                                let rate = dayData.contest_advanced.total === 0 ? 0 : Math.round((dayData.contest_advanced.correct / dayData.contest_advanced.total) * 100);
-                                tipText += `\n⚡ 進階挑戰: 練習 ${dayData.contest_advanced.sessions.size} 次, 答對 ${dayData.contest_advanced.correct} 題 (${rate}%)`;
-                            }
-                            dotsHtml += `<span class="dot active" data-tip="${tipText}"></span>`;
-                        } else {
-                            dotsHtml += `<span class="dot" data-tip="${shortDate}: 未練習"></span>`;
-                        }
+                       if (score > 0) {
+    let tipText = `${shortDate} 總計：答對 ${score} 題, 答錯 ${wrong} 題\n------------------------------`;
+    if (dayData.basic.sessions.size > 0) {
+        let rate = dayData.basic.total === 0 ? 0 : Math.round((dayData.basic.correct / dayData.basic.total) * 100);
+        tipText += `\n📘 基礎: 練習 ${dayData.basic.sessions.size} 次, 答對 ${dayData.basic.correct} 題 (${rate}%)`;
+    }
+    if (dayData.advanced.sessions.size > 0) {
+        let rate = dayData.advanced.total === 0 ? 0 : Math.round((dayData.advanced.correct / dayData.advanced.total) * 100);
+        tipText += `\n📗 進階: 練習 ${dayData.advanced.sessions.size} 次, 答對 ${dayData.advanced.correct} 題 (${rate}%)`;
+    }
+    if (dayData.contest.sessions.size > 0) {
+        let rate = dayData.contest.total === 0 ? 0 : Math.round((dayData.contest.correct / dayData.contest.total) * 100);
+        // 平均答題數 (四捨五入取整數)
+        let avgTotal = Math.round(dayData.contest.total / dayData.contest.sessions.size);
+        tipText += `\n⏱️ 挑戰: 練習 ${dayData.contest.sessions.size} 次, 均答 ${avgTotal} 題, 答對 ${dayData.contest.correct} 題 (${rate}%)`;
+    }
+    if (dayData.contest_advanced.sessions.size > 0) {
+        let rate = dayData.contest_advanced.total === 0 ? 0 : Math.round((dayData.contest_advanced.correct / dayData.contest_advanced.total) * 100);
+        // 平均答題數 (四捨五入取整數)
+        let avgTotal = Math.round(dayData.contest_advanced.total / dayData.contest_advanced.sessions.size);
+        tipText += `\n⚡ 進階挑戰: 練習 ${dayData.contest_advanced.sessions.size} 次, 均答 ${avgTotal} 題, 答對 ${dayData.contest_advanced.correct} 題 (${rate}%)`;
+    }
+    dotsHtml += `<span class="dot active" data-tip="${tipText}"></span>`;
+} else {
+    dotsHtml += `<span class="dot" data-tip="${shortDate}: 未練習"></span>`;
+}
                     });
                     dotsHtml += '</div>';
                     centerTdContent = dotsHtml + ` <span style="font-size:11px;color:#7f8c8d;">(${record.weekActiveDays}天)</span>`;
