@@ -1217,11 +1217,11 @@
     let tipText = `${shortDate} 總計：答對 ${score} 題, 答錯 ${wrong} 題\n------------------------------`;
     if (dayData.basic.sessions.size > 0) {
         let rate = dayData.basic.total === 0 ? 0 : Math.round((dayData.basic.correct / dayData.basic.total) * 100);
-        tipText += `\n📘 基礎: 練習 ${dayData.basic.sessions.size} 次, 答對 ${dayData.basic.correct} 題 (${rate}%)`;
+        tipText += `\n📘 基礎: 練習 ${dayData.basic.sessions.size} 次, 答對 ${dayData.basic.correct} 題 (均答率 ${rate}%)`;
     }
     if (dayData.advanced.sessions.size > 0) {
         let rate = dayData.advanced.total === 0 ? 0 : Math.round((dayData.advanced.correct / dayData.advanced.total) * 100);
-        tipText += `\n📗 進階: 練習 ${dayData.advanced.sessions.size} 次, 答對 ${dayData.advanced.correct} 題 (${rate}%)`;
+        tipText += `\n📗 進階: 練習 ${dayData.advanced.sessions.size} 次, 答對 ${dayData.advanced.correct} 題 (均答率 ${rate}%)`;
     }
     if (dayData.contest.sessions.size > 0) {
         let rate = dayData.contest.total === 0 ? 0 : Math.round((dayData.contest.correct / dayData.contest.total) * 100);
