@@ -361,6 +361,7 @@
         <div style="background-color: #ebf5fb; border-left: 5px solid #3498db; border-radius: 8px; padding: 15px; text-align: left; max-width: 80%; margin: 0 auto;">
             <h3 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; display: flex; align-items: center; gap: 5px;">🛠️ 最近更新項目</h3>
             <ul style="margin: 0; padding-left: 20px; color: #566573; font-size: 14px; line-height: 1.6; font-weight: bold;">
+                <li>基礎練習新增絕對值運算題型 (佔比 30%)</li>
                 <li>部分徽章判定條件調整</li>
                 <li>基礎模式答對回饋時間縮短</li>
                 <li>挑戰模式開始前增加倒數3秒緩衝時間</li>
@@ -723,10 +724,42 @@
 
         let qText = '';
         if (currentData.mode === 'basic' || currentData.mode === 'contest') {
-            let n1, n2, op;
-            do { n1 = getRandomNumWithoutZero(); n2 = getRandomNumWithoutZero(); op = getRandomOp(); } while (isSimpleQuiz(n1, op, n2));
-            qText = `${formatNum(n1)} ${op} ${formatNum(n2)} = ?`;
-            currentAnswer = op === '+' ? n1 + n2 : n1 - n2;
+            // 30% 機率產生絕對值題型，70% 產生原本的基礎題型
+            const isAbsoluteValType = Math.random() < 0.3;
+
+            if (isAbsoluteValType) {
+                // --- 30% 絕對值題型 ---
+                let a = getRandomNumWithoutZero();
+                let b = getRandomNumWithoutZero();
+                const absType = Math.floor(Math.random() * 4) + 1;
+                const absA = Math.abs(a);
+                const absB = Math.abs(b);
+
+                switch (absType) {
+                    case 1: // |非0整數| + |非0整數|
+                        qText = `|${a}| + |${b}| = ?`;
+                        currentAnswer = absA + absB;
+                        break;
+                    case 2: // |非0整數| - |非0整數|
+                        qText = `|${a}| - |${b}| = ?`;
+                        currentAnswer = absA - absB;
+                        break;
+                    case 3: // -|非0整數| + |非0整數|
+                        qText = `-|${a}| + |${b}| = ?`;
+                        currentAnswer = -absA + absB;
+                        break;
+                    case 4: // -|非0整數| - |非0整數|
+                        qText = `-|${a}| - |${b}| = ?`;
+                        currentAnswer = -absA - absB;
+                        break;
+                }
+            } else {
+                // --- 70% 原有基礎題型 ---
+                let n1, n2, op;
+                do { n1 = getRandomNumWithoutZero(); n2 = getRandomNumWithoutZero(); op = getRandomOp(); } while (isSimpleQuiz(n1, op, n2));
+                qText = `${formatNum(n1)} ${op} ${formatNum(n2)} = ?`;
+                currentAnswer = op === '+' ? n1 + n2 : n1 - n2;
+            }
         } else if (currentData.mode === 'advanced') {
             let n1, n2, n3, op1, op2, temp;
             do { n1 = getRandomNumWithoutZero(); n2 = getRandomNumWithoutZero(); op1 = getRandomOp(); } while (isSimpleQuiz(n1, op1, n2));
