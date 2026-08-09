@@ -1225,15 +1225,13 @@
     }
     if (dayData.contest.sessions.size > 0) {
         let rate = dayData.contest.total === 0 ? 0 : Math.round((dayData.contest.correct / dayData.contest.total) * 100);
-        // 平均答題數 (四捨五入取整數)
         let avgTotal = Math.round(dayData.contest.total / dayData.contest.sessions.size);
-        tipText += `\n⏱️ 挑戰: 練習 ${dayData.contest.sessions.size} 次, 均答 ${avgTotal} 題, 答對 ${dayData.contest.correct} 題 (${rate}%)`;
+        tipText += `\n⏱️ 挑戰: 練習 ${dayData.contest.sessions.size} 次, 答對 ${dayData.contest.correct} 題 (均答 ${avgTotal} 題, 均答率 ${rate}%)`;
     }
     if (dayData.contest_advanced.sessions.size > 0) {
         let rate = dayData.contest_advanced.total === 0 ? 0 : Math.round((dayData.contest_advanced.correct / dayData.contest_advanced.total) * 100);
-        // 平均答題數 (四捨五入取整數)
         let avgTotal = Math.round(dayData.contest_advanced.total / dayData.contest_advanced.sessions.size);
-        tipText += `\n⚡ 進階挑戰: 練習 ${dayData.contest_advanced.sessions.size} 次, 均答 ${avgTotal} 題, 答對 ${dayData.contest_advanced.correct} 題 (${rate}%)`;
+        tipText += `\n⚡ 進階挑戰: 練習 ${dayData.contest_advanced.sessions.size} 次, 答對 ${dayData.contest_advanced.correct} 題 (均答 ${avgTotal} 題, 均答率 ${rate}%)`;
     }
     dotsHtml += `<span class="dot active" data-tip="${tipText}"></span>`;
 } else {
