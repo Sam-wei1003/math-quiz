@@ -134,7 +134,7 @@
             <p id="lobby-today-advance">📗 今日進階答對：0 題</p>
         </div>
 
-        <!-- 完整成就徽章牆（包含 Tooltip 說明） -->
+        <!-- 完整成就徽章牆 -->
         <div id="badge-stage-placeholder" class="badge-wall">
             <div class="badge-wall-title">🏆 你的成就徽章牆</div>
             <div class="badge-container">
@@ -222,7 +222,7 @@
         <div id="snake-header">
             <div id="snake-score-display">
                 <div>答對: <span id="snake-correct-count" style="color: #fbc531;">0</span> 題</div>
-                <div style="font-size: 14px; color: #bdc3c7;">等級: <span id="snake-level-display">1</span></div>
+                <div style="font-size: 14px; color: #bdc3c7;">最高分: <span id="snake-highscore-display">0</span> 分</div>
             </div>
             <div id="snake-qbox">題目載入中...</div>
         </div>
@@ -242,10 +242,9 @@
         <h1 style="color: #e74c3c;" id="result-title">⏱️ 時間到！挑戰結束</h1>
         <div class="scoreboard" style="background-color: #eaecee; margin-top: 20px;">
             <div style="grid-column: span 2; font-size: 20px; text-align: center; font-weight: bold; color: #2c3e50;">
-                你的最終戰績：答對 <span id="final-correct" style="color:#27ae60; font-size:26px;">0</span> 題
+                你的最終戰績：得分 <span id="final-correct" style="color:#27ae60; font-size:26px;">0</span> 分
             </div>
-            <div>總計題數: <span id="final-total">0</span> 題</div>
-            <div>最終正確率: <span id="final-rate">0</span>%</div>
+            <div style="grid-column: span 2; text-align: center;">總計題數: <span id="final-total">0</span> 題</div>
         </div>
         
         <button onclick="restartGame()" class="btn-again">🔥 再挑戰一次 (名字免重打)</button>
@@ -285,7 +284,7 @@
 </div>
 
 <script>
-    // Firebase 金鑰配置 (完全維持你的設定)
+    // Firebase 金鑰配置
     const firebaseConfig = {
         apiKey: "AIzaSyBVsWn1_ejMdHsqsYLkaDQHYXyraDeQD_U",
         authDomain: "math-quiz-f0e5b.firebaseapp.com",
@@ -312,6 +311,7 @@
 
     let practiceBuffer = { correct: 0, total: 0 };
     let currentSessionId = "";
+    let userAdventureHighScore = 0; // 紀錄使用者冒險模式歷史最高分
 
     window.onload = function() {
         switchTab('home', 'week');
@@ -585,7 +585,7 @@
         isSnakeOver = false;
         
         document.getElementById('snake-correct-count').innerText = currentData.correct;
-        document.getElementById('snake-level-display').innerText = currentSnakeLevel;
+        document.getElementById('snake-highscore-display').innerText = userAdventureHighScore;
         
         generateSnakeQuestion();
         drawSnakeGame();
@@ -603,7 +603,6 @@
 
         if (newLevel !== currentSnakeLevel) {
             currentSnakeLevel = newLevel;
-            document.getElementById('snake-level-display').innerText = currentSnakeLevel;
             
             const cvs = document.getElementById('snakeCanvas');
             cvs.classList.remove('flash-border'); void cvs.offsetWidth; cvs.classList.add('flash-border');
@@ -775,8 +774,6 @@
         document.getElementById('result-title').innerText = reasonTitle;
         document.getElementById('final-correct').innerText = currentData.correct;
         document.getElementById('final-total').innerText = currentData.total;
-        let rate = currentData.total === 0 ? 0 : Math.round((currentData.correct / currentData.total) * 100);
-        document.getElementById('final-rate').innerText = rate;
         
         saveContestDataAndLoadLeaderboard();
     }
@@ -810,7 +807,7 @@
         return dates;
     }
 
-    // 完整還原徽章檢測邏輯與排行榜數據統計
+    // 載入與統計數據邏輯
     function loadLeaderboardData(elementId, filterType, subMode) {
         if (!database) return;
         database.ref('contest_records').once('value', (snapshot) => {
@@ -893,7 +890,7 @@
                 s.weekActiveDays = activeDays;
             });
 
-            // 完整解鎖 9 大徽章全判斷邏輯
+            // 徽章檢測與紀錄最高分
             if (currentData.name) {
                 const sData = studentMap[currentData.name.trim()];
                 let todayCount = 0, todayBasicCorrect = 0, todayAdvanceCorrect = 0, maxSingleDayBasic = 0, maxSingleDayAdvance = 0;
@@ -901,6 +898,7 @@
                 let globalTotalCorrect = sData ? sData.historyTotalCorrect : 0;
 
                 if (sData) {
+                    userAdventureHighScore = sData.adventure.historyMaxCorrect; // 更新當前玩家冒險模式歷史最高分
                     todayCount = sData.contest.todayCount + sData.contest_advanced.todayCount + sData.adventure.todayCount;
                     historyMaxCorrect = Math.max(sData.contest.historyMaxCorrect, sData.contest_advanced.historyMaxCorrect);
                     greenDotsCount = sData.weekActiveDays;
@@ -920,42 +918,42 @@
                 document.getElementById('lobby-today-basic').innerText = `📘 今日基礎答對：${todayBasicCorrect} 題`;
                 document.getElementById('lobby-today-advance').innerText = `📗 今日進階答對：${todayAdvanceCorrect} 題`;
                 
-                // 1. 初出茅廬 (10題)
+                // 1. 初出茅廬
                 if (globalTotalCorrect >= 10) { document.getElementById('badge-novice').className = "badge-item unlocked"; document.getElementById('badge-progress-novice').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-novice').className = "badge-item"; document.getElementById('badge-progress-novice').innerText = `${globalTotalCorrect}/10`; }
 
-                // 2. 熟能生巧 (三階: 100/300/500)
+                // 2. 熟能生巧
                 const masterNameEl = document.getElementById('badge-name-master');
                 if (globalTotalCorrect >= 500) { document.getElementById('badge-master').className = "badge-item unlocked"; masterNameEl.innerText = "熟能生巧 III"; document.getElementById('badge-progress-master').innerText = "已達頂級! 🎉"; }
                 else if (globalTotalCorrect >= 300) { document.getElementById('badge-master').className = "badge-item unlocked"; masterNameEl.innerText = "熟能生巧 III"; document.getElementById('badge-progress-master').innerText = `${globalTotalCorrect}/500`; }
                 else if (globalTotalCorrect >= 100) { document.getElementById('badge-master').className = "badge-item unlocked"; masterNameEl.innerText = "熟能生巧 II"; document.getElementById('badge-progress-master').innerText = `${globalTotalCorrect}/300`; }
                 else { document.getElementById('badge-master').className = "badge-item"; masterNameEl.innerText = "熟能生巧 I"; document.getElementById('badge-progress-master').innerText = `${globalTotalCorrect}/100`; }
 
-                // 3. 持之以恆 (6天點亮)
+                // 3. 持之以恆
                 if (greenDotsCount >= 6) { document.getElementById('badge-pioneer').className = "badge-item unlocked"; document.getElementById('badge-progress-pioneer').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-pioneer').className = "badge-item"; document.getElementById('badge-progress-pioneer').innerText = `${greenDotsCount}/6 天`; }
 
-                // 4. 突破極限 (32題)
+                // 4. 突破極限
                 if (historyMaxCorrect >= 32) { document.getElementById('badge-limit').className = "badge-item unlocked"; document.getElementById('badge-progress-limit').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-limit').className = "badge-item"; document.getElementById('badge-progress-limit').innerText = `${historyMaxCorrect}/32`; }
 
-                // 5. 登峰造極 (28題 + 100%)
+                // 5. 登峰造極
                 if (hasHistoryPerfect) { document.getElementById('badge-perfect').className = "badge-item unlocked"; document.getElementById('badge-progress-perfect').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-perfect').className = "badge-item"; document.getElementById('badge-progress-perfect').innerText = "未達成"; }
 
-                // 6. 閃電快手 (20題)
+                // 6. 閃電快手
                 if (historyMaxCorrect >= 20) { document.getElementById('badge-speed').className = "badge-item unlocked"; document.getElementById('badge-progress-speed').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-speed').className = "badge-item"; document.getElementById('badge-progress-speed').innerText = `${historyMaxCorrect}/20`; }
 
-                // 7. 基礎奠基 (單日基礎200題)
+                // 7. 基礎奠基
                 if (maxSingleDayBasic >= 200) { document.getElementById('badge-basic').className = "badge-item unlocked"; document.getElementById('badge-progress-basic').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-basic').className = "badge-item"; document.getElementById('badge-progress-basic').innerText = `${maxSingleDayBasic}/200`; }
 
-                // 8. 勇於挑戰 (單日進階50題)
+                // 8. 勇於挑戰
                 if (maxSingleDayAdvance >= 50) { document.getElementById('badge-advance').className = "badge-item unlocked"; document.getElementById('badge-progress-advance').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-advance').className = "badge-item"; document.getElementById('badge-progress-advance').innerText = `${maxSingleDayAdvance}/50`; }
 
-                // 9. 精準射手 (15題 + 100%)
+                // 9. 精準射手
                 if (hasSniper) { document.getElementById('badge-sniper').className = "badge-item unlocked"; document.getElementById('badge-progress-sniper').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-sniper').className = "badge-item"; document.getElementById('badge-progress-sniper').innerText = "未達成"; }
             }
