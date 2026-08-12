@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>正負數加減法綜合練習場 - 含冒險模式</title>
+    <title>正負數運算世界</title>
     
     <!-- 引入 Firebase 核心 SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        body { font-family: 'Arial', sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        .container { background-color: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 580px; position: relative; }
+        body { font-family: 'Arial', sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .container { background-color: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 580px; position: relative; box-sizing: border-box; }
         h1 { color: #2c3e50; margin-bottom: 5px; }
         h2 { color: #e67e22; margin-top: 5px; font-size: 20px; }
         .hidden { display: none !important; }
@@ -45,15 +45,19 @@
         .badge-item::after { content: attr(data-tip); position: absolute; bottom: 115%; left: 50%; transform: translateX(-50%); background-color: rgba(44, 62, 80, 0.95); color: white; padding: 8px 12px; font-size: 12px; line-height: 1.4; border-radius: 6px; white-space: pre-wrap; width: max-content; max-width: 200px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.25); opacity: 0; pointer-events: none; transition: opacity 0.15s; z-index: 99; }
         .badge-item:hover::after { opacity: 1; }
 
-        /* 模式選擇卡片 */
-        .mode-selection { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
-        .mode-card { padding: 15px; border-radius: 8px; border: none; cursor: pointer; transition: 0.2s; color: white; font-size: 18px; font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.12); }
-        .mode-card:hover { transform: translateY(-2px); box-shadow: 0 5px 12px rgba(0,0,0,0.2); }
+        /* 模式選擇分區 UI (問題 2 優化) */
+        .mode-selection-container { display: flex; flex-direction: column; gap: 15px; margin: 20px 0; }
+        .mode-group { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 10px; padding: 12px; text-align: left; }
+        .mode-group-title { font-size: 15px; font-weight: bold; color: #34495e; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .mode-group-btns { display: flex; flex-direction: column; gap: 8px; }
         
-        .card-basic { background-color: #4CAF50; }       
-        .card-advance { background-color: #2196F3; }     
-        .card-contest { background-color: #FF9800; }     
-        .card-contest-adv { background-color: #E53935; } 
+        .mode-card { padding: 14px 18px; border-radius: 8px; border: none; cursor: pointer; transition: 0.2s; color: white; font-size: 16px; font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.1); text-align: center; display: block; width: 100%; box-sizing: border-box; }
+        .mode-card:hover { transform: translateY(-2px); box-shadow: 0 5px 12px rgba(0,0,0,0.18); }
+        
+        .card-basic { background-color: #27ae60; }       
+        .card-advance { background-color: #2980b9; }     
+        .card-contest { background-color: #e67e22; }     
+        .card-contest-adv { background-color: #c0392b; } 
         .card-adventure { background-color: #8e44ad; } 
 
         .timer-box { font-size: 26px; font-weight: bold; color: #e74c3c; background-color: #fadbd8; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
@@ -65,24 +69,20 @@
         .wrong { color: #c0392b; }
         .hint { font-size: 14px; color: #7f8c8d; margin-top: 10px; }
 
-        /* 貪食蛇冒險模式樣式 */
+        /* 貪食蛇冒險模式與手把 UI (問題 3 優化) */
         #snake-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 10px; background: #2c3e50; border-radius: 8px; color: white; }
         #snake-qbox { font-size: 24px; font-weight: bold; color: #fbc531; }
         #snake-score-display { font-size: 18px; font-weight: bold; color: #2ecc71; text-align: left; }
         #snakeCanvas { background-color: #1a1a24; border-radius: 8px; border: 3px solid #34495e; width: 100%; max-width: 400px; height: auto; touch-action: none; transition: border-color 0.3s; margin: 0 auto; display: block; }
-        .flash-border { animation: borderFlash 1s ease-in-out; }
-        @keyframes borderFlash {
-            0% { border-color: #34495e; box-shadow: 0 0 0 rgba(241, 196, 15, 0); }
-            25% { border-color: #f1c40f; box-shadow: 0 0 20px rgba(241, 196, 15, 0.8); }
-            50% { border-color: #2ecc71; box-shadow: 0 0 30px rgba(46, 204, 113, 1); }
-            75% { border-color: #f1c40f; box-shadow: 0 0 20px rgba(241, 196, 15, 0.8); }
-            100% { border-color: #34495e; box-shadow: 0 0 0 rgba(241, 196, 15, 0); }
-        }
-        .d-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 200px; margin: 15px auto 0; }
-        .d-btn { background: #95a5a6; color: white; border: none; padding: 15px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; }
-        .d-btn:active { background: #f39c12; }
+        
+        /* 手機大方向鍵控制器 (D-Pad) */
+        .d-pad-container { display: flex; justify-content: center; margin-top: 15px; }
+        .d-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 240px; height: 240px; background-color: #e2e8f0; padding: 12px; border-radius: 50%; box-shadow: inset 0 2px 6px rgba(0,0,0,0.15); box-sizing: border-box; }
+        .d-btn { background: #34495e; color: white; border: none; font-size: 1.8rem; font-weight: bold; border-radius: 12px; display: flex; justify-content: center; align-items: center; user-select: none; -webkit-user-select: none; cursor: pointer; box-shadow: 0 4px 0 #1a252f; transition: all 0.05s ease; }
+        .d-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #1a252f; background: #e67e22; }
+        .d-pad-empty { background: transparent; }
 
-        /* 排行榜樣式 */
+        /* 排行榜與明細樣式 (問題 1 優化) */
         .leaderboard { margin-top: 25px; text-align: left; background-color: #fcf3cf; padding: 15px; border-radius: 8px; border: 2px dashed #f1c40f; }
         .tab-container { display: flex; justify-content: center; margin-bottom: 8px; gap: 5px; }
         .sub-tab-container { display: flex; justify-content: center; margin-bottom: 12px; gap: 5px; }
@@ -97,11 +97,12 @@
         .rank-table th, .rank-table td { padding: 8px 3px; text-align: center; border-bottom: 1px solid #f9e79f; }
         .top1 { font-weight: bold; color: #d4ac0d; background-color: #fef9e7; }
 
-        .dot-container { display: inline-flex; gap: 3px; justify-content: center; align-items: center; vertical-align: middle; position: relative; }
-        .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; background-color: #e0e0e0; position: relative; cursor: help; }
-        .dot.active { background-color: #2ecc71; }
-        .dot::after { content: attr(data-tip); position: absolute; right: 120%; left: auto; top: -10px; background-color: rgba(44, 62, 80, 0.95); color: white; padding: 8px 12px; font-size: 11px; line-height: 1.5; border-radius: 6px; white-space: pre-wrap; min-width: 210px; width: max-content; text-align: left; box-shadow: 0 4px 10px rgba(0,0,0,0.25); opacity: 0; pointer-events: none; transition: opacity 0.1s; z-index: 99; }
-        .dot:hover::after { opacity: 1 !important; }
+        /* 綠燈足跡點數懸浮明細 */
+        .dot-container { display: inline-flex; gap: 4px; justify-content: center; align-items: center; vertical-align: middle; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; background-color: #dcdde1; position: relative; cursor: help; }
+        .dot.active { background-color: #2ecc71; box-shadow: 0 0 4px rgba(46, 204, 113, 0.6); }
+        .dot::after { content: attr(data-tip); position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); background-color: rgba(44, 62, 80, 0.95); color: white; padding: 6px 10px; font-size: 11px; line-height: 1.4; border-radius: 6px; white-space: pre; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.25); opacity: 0; pointer-events: none; transition: opacity 0.15s; z-index: 999; }
+        .dot:hover::after { opacity: 1; }
     </style>
 </head>
 <body>
@@ -115,12 +116,12 @@
         <br>
         <button onclick="handleLogin()" class="btn-login" style="margin-bottom: 30px;">進入修練場 🚀</button>
 
-        <div style="background-color: #ebf5fb; border-left: 5px solid #3498db; border-radius: 8px; padding: 15px; text-align: left; max-width: 80%; margin: 0 auto;">
+        <div style="background-color: #ebf5fb; border-left: 5px solid #3498db; border-radius: 8px; padding: 15px; text-align: left; width: 90%; margin: 0 auto; box-sizing: border-box;">
             <h3 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; display: flex; align-items: center; gap: 5px;">🛠️ 最近更新項目</h3>
             <ul style="margin: 0; padding-left: 20px; color: #566573; font-size: 14px; line-height: 1.6; font-weight: bold;">
-                <li style="color:#8e44ad;">全新實裝「🐍 冒險模式(貪食蛇)」！</li>
-                <li>新增「1分鐘進階挑戰賽 (含乘除及絕對值)」模式</li>
-                <li>排行榜分頁支援三大挑戰獨立展示</li>
+                <li style="color:#8e44ad;">優化模式選擇 UI 拆分為三大主題專區</li>
+                <li style="color:#27ae60;">修復一週勤奮榜明細足跡提示功能</li>
+                <li>貪食蛇冒險模式升級加大版手機實體感按鍵</li>
             </ul>
         </div>
     </div>
@@ -134,7 +135,7 @@
             <p id="lobby-today-advance">📗 今日進階答對：0 題</p>
         </div>
 
-        <!-- 完整成就徽章牆 -->
+        <!-- 成就徽章牆 -->
         <div id="badge-stage-placeholder" class="badge-wall">
             <div class="badge-wall-title">🏆 你的成就徽章牆</div>
             <div class="badge-container">
@@ -150,14 +151,36 @@
             </div>
         </div>
 
-        <div class="mode-selection">
-            <div onclick="startGame('basic')" class="mode-card card-basic">🟢 基礎練習 (不限時/2個數/含絕對值)</div>
-            <div onclick="startGame('advanced')" class="mode-card card-advance">🟣 進階練習 (不限時/3個數)</div>
-            <div onclick="startGame('contest')" class="mode-card card-contest">⏱️ 1分鐘限時挑戰賽</div>
-            <div onclick="startGame('contest_advanced')" class="mode-card card-contest-adv">🔥 1分鐘進階挑戰賽 (含乘除及絕對值)</div>
-            <div onclick="startGame('adventure')" class="mode-card card-adventure">🐍 冒險模式 (貪食蛇生存戰)</div>
+        <!-- 3 個獨立區塊模式選擇 (問題 2 修正) -->
+        <div class="mode-selection-container">
+            <!-- 區塊 1：練習模式區塊 -->
+            <div class="mode-group">
+                <div class="mode-group-title">📖 1. 練習模式 (自主建構基礎)</div>
+                <div class="mode-group-btns">
+                    <button onclick="startGame('basic')" class="mode-card card-basic">🟢 基礎練習 (不限時 / 2個數 / 含絕對值)</button>
+                    <button onclick="startGame('advanced')" class="mode-card card-advance">🟣 進階練習 (不限時 / 3個數綜合算)</button>
+                </div>
+            </div>
+
+            <!-- 區塊 2：競速模式區塊 -->
+            <div class="mode-group">
+                <div class="mode-group-title">⏱️ 2. 競速模式 (1分鐘限時極限挑戰)</div>
+                <div class="mode-group-btns">
+                    <button onclick="startGame('contest')" class="mode-card card-contest">⚡ 1分鐘限時挑戰賽 (基礎加減)</button>
+                    <button onclick="startGame('contest_advanced')" class="mode-card card-contest-adv">🔥 1分鐘進階挑戰賽 (含乘除及絕對值)</button>
+                </div>
+            </div>
+
+            <!-- 區塊 3：冒險模式區塊 -->
+            <div class="mode-group">
+                <div class="mode-group-title">🎮 3. 冒險模式 (趣味遊戲挑戰)</div>
+                <div class="mode-group-btns">
+                    <button onclick="startGame('adventure')" class="mode-card card-adventure">🐍 貪食蛇生存戰 (運算吃答冒險)</button>
+                </div>
+            </div>
         </div>
 
+        <!-- 排行榜 -->
         <div class="leaderboard">
             <div class="tab-container">
                 <button id="tab-home-week" class="tab-btn active" onclick="switchTab('home', 'week')">🔥 一週勤奮榜</button>
@@ -217,7 +240,7 @@
         <button onclick="exitGame()" class="btn-nav" style="margin-top:15px;">返回大廳</button>
     </div>
 
-    <!-- 階段 3.5：貪食蛇冒險模式區 -->
+    <!-- 階段 3.5：貪食蛇冒險模式區 (問題 3 按鈕加大優化) -->
     <div id="snake-stage" class="hidden">
         <div id="snake-header">
             <div id="snake-score-display">
@@ -229,12 +252,22 @@
 
         <canvas id="snakeCanvas" width="400" height="400"></canvas>
 
-        <div class="d-pad">
-            <div></div><button class="d-btn" onclick="setDirection(0, -1)">▲</button><div></div>
-            <button class="d-btn" onclick="setDirection(-1, 0)">◄</button><div></div><button class="d-btn" onclick="setDirection(1, 0)">►</button>
-            <div></div><button class="d-btn" onclick="setDirection(0, 1)">▼</button><div></div>
+        <!-- 手機專用大十字手把 -->
+        <div class="d-pad-container">
+            <div class="d-pad">
+                <div class="d-pad-empty"></div>
+                <button class="d-btn" onclick="setDirection(0, -1)" aria-label="上">▲</button>
+                <div class="d-pad-empty"></div>
+                <button class="d-btn" onclick="setDirection(-1, 0)" aria-label="左">◄</button>
+                <div class="d-pad-empty"></div>
+                <button class="d-btn" onclick="setDirection(1, 0)" aria-label="右">►</button>
+                <div class="d-pad-empty"></div>
+                <button class="d-btn" onclick="setDirection(0, 1)" aria-label="下">▼</button>
+                <div class="d-pad-empty"></div>
+            </div>
         </div>
-        <button onclick="exitGame()" class="btn-nav" style="margin-top:20px; width: 200px;">🏠 放棄並返回大廳</button>
+
+        <button onclick="exitGame()" class="btn-nav" style="margin-top:20px; width: 220px;">🏠 放棄並返回大廳</button>
     </div>
 
     <!-- 階段四：結算區 -->
@@ -311,7 +344,7 @@
 
     let practiceBuffer = { correct: 0, total: 0 };
     let currentSessionId = "";
-    let userAdventureHighScore = 0; // 紀錄使用者冒險模式歷史最高分
+    let userAdventureHighScore = 0;
 
     window.onload = function() {
         switchTab('home', 'week');
@@ -452,7 +485,7 @@
         }
     }
 
-    // --- 共用數學邏輯 ---
+    // --- 數學出題邏輯 ---
     function getRandomNumWithoutZero() {
         let num = 0; while (num === 0) { num = Math.floor(Math.random() * 21) - 10; } return num;
     }
@@ -570,7 +603,7 @@
         updateScoreboard();
     }
 
-    // --- 🐍 貪食蛇冒險模式引擎 ---
+    // --- 🐍 貪食蛇冒險模式 ---
     const canvas = document.getElementById('snakeCanvas');
     const ctx = canvas.getContext('2d');
     const GRID = 20, TILE_COUNT = 20;
@@ -603,11 +636,6 @@
 
         if (newLevel !== currentSnakeLevel) {
             currentSnakeLevel = newLevel;
-            
-            const cvs = document.getElementById('snakeCanvas');
-            cvs.classList.remove('flash-border'); void cvs.offsetWidth; cvs.classList.add('flash-border');
-            setTimeout(() => cvs.classList.remove('flash-border'), 1000);
-
             if (currentSnakeLevel === 4) snakeBaseSpeed = 100;
             else if (currentSnakeLevel === 5) snakeBaseSpeed = 65;
             
@@ -619,7 +647,7 @@
         if (currentSnakeLevel >= 4) qType = Math.floor(Math.random() * 3) + 1;
         
         let qText = '', ans = 0;
-        if (qType === 1) { // 純基礎
+        if (qType === 1) { 
             let a, b, isAdd, valid = false;
             while (!valid) {
                 a = getRandomNumWithoutZero(); b = getRandomNumWithoutZero(); isAdd = Math.random() < 0.5;
@@ -628,11 +656,11 @@
             }
             qText = `${formatNum(a)} ${isAdd ? '+' : '-'} ${formatNum(b)} = ?`;
             ans = isAdd ? (a + b) : (a - b);
-        } else if (qType === 2) { // 乘除
+        } else if (qType === 2) { 
             let a = getRandomNumWithoutZero(), b = getRandomNumWithoutZero();
             if (Math.random() < 0.5) { qText = `${formatNum(a)} × ${formatNum(b)} = ?`; ans = a * b; }
             else { let c = a * b; qText = `${formatNum(c)} ÷ ${formatNum(a)} = ?`; ans = b; }
-        } else if (qType === 3) { // 絕對值
+        } else if (qType === 3) { 
             let a = getRandomNumWithoutZero(), b = getRandomNumWithoutZero();
             let absA = Math.abs(a), absB = Math.abs(b);
             switch(Math.floor(Math.random() * 4) + 1) {
@@ -742,7 +770,7 @@
         }
     });
 
-    // --- 系統共用 ---
+    // --- 通用系統數據寫入與排行榜 ---
     function savePracticeBatch() {
         if (!database || practiceBuffer.total === 0) return;
         const timestamp = new Date().getTime();
@@ -807,7 +835,7 @@
         return dates;
     }
 
-    // 載入與統計數據邏輯
+    // 問題 1 修正：還原一週勤奮榜詳細明細與綠點數據渲染
     function loadLeaderboardData(elementId, filterType, subMode) {
         if (!database) return;
         database.ref('contest_records').once('value', (snapshot) => {
@@ -836,11 +864,11 @@
                     past7Days.forEach(d => {
                         studentMap[name].dayRecords[d] = { 
                             correct: 0, total: 0,
-                            basic: { correct: 0, total: 0, sessions: new Set() },
-                            advanced: { correct: 0, total: 0, sessions: new Set() },
-                            contest: { correct: 0, total: 0, sessions: new Set() },
-                            contest_advanced: { correct: 0, total: 0, sessions: new Set() },
-                            adventure: { correct: 0, total: 0, sessions: new Set() }
+                            basic: { correct: 0, total: 0 },
+                            advanced: { correct: 0, total: 0 },
+                            contest: { correct: 0, total: 0 },
+                            contest_advanced: { correct: 0, total: 0 },
+                            adventure: { correct: 0, total: 0 }
                         };
                     });
                 }
@@ -856,12 +884,11 @@
 
                 if (s.dayRecords[datePart] !== undefined) {
                     s.dayRecords[datePart].correct += correct; s.dayRecords[datePart].total += total;
-                    let sessionKey = recordSessionId || ("legacy_" + childSnapshot.key);
-                    if (recordMode === '基礎') { s.dayRecords[datePart].basic.correct += correct; s.dayRecords[datePart].basic.total += total; s.dayRecords[datePart].basic.sessions.add(sessionKey); } 
-                    else if (recordMode === '進階') { s.dayRecords[datePart].advanced.correct += correct; s.dayRecords[datePart].advanced.total += total; s.dayRecords[datePart].advanced.sessions.add(sessionKey); } 
-                    else if (recordMode === '進階挑戰') { s.dayRecords[datePart].contest_advanced.correct += correct; s.dayRecords[datePart].contest_advanced.total += total; s.dayRecords[datePart].contest_advanced.sessions.add(sessionKey); } 
-                    else if (recordMode === '冒險') { s.dayRecords[datePart].adventure.correct += correct; s.dayRecords[datePart].adventure.total += total; s.dayRecords[datePart].adventure.sessions.add(sessionKey); } 
-                    else { s.dayRecords[datePart].contest.correct += correct; s.dayRecords[datePart].contest.total += total; s.dayRecords[datePart].contest.sessions.add(sessionKey); }
+                    if (recordMode === '基礎') { s.dayRecords[datePart].basic.correct += correct; s.dayRecords[datePart].basic.total += total; } 
+                    else if (recordMode === '進階') { s.dayRecords[datePart].advanced.correct += correct; s.dayRecords[datePart].advanced.total += total; } 
+                    else if (recordMode === '進階挑戰') { s.dayRecords[datePart].contest_advanced.correct += correct; s.dayRecords[datePart].contest_advanced.total += total; } 
+                    else if (recordMode === '冒險') { s.dayRecords[datePart].adventure.correct += correct; s.dayRecords[datePart].adventure.total += total; } 
+                    else { s.dayRecords[datePart].contest.correct += correct; s.dayRecords[datePart].contest.total += total; }
                 }
 
                 if (recordMode === '挑戰' || recordMode === '進階挑戰' || recordMode === '冒險') {
@@ -890,7 +917,7 @@
                 s.weekActiveDays = activeDays;
             });
 
-            // 徽章檢測與紀錄最高分
+            // 徽章檢測更新
             if (currentData.name) {
                 const sData = studentMap[currentData.name.trim()];
                 let todayCount = 0, todayBasicCorrect = 0, todayAdvanceCorrect = 0, maxSingleDayBasic = 0, maxSingleDayAdvance = 0;
@@ -898,7 +925,7 @@
                 let globalTotalCorrect = sData ? sData.historyTotalCorrect : 0;
 
                 if (sData) {
-                    userAdventureHighScore = sData.adventure.historyMaxCorrect; // 更新當前玩家冒險模式歷史最高分
+                    userAdventureHighScore = sData.adventure.historyMaxCorrect;
                     todayCount = sData.contest.todayCount + sData.contest_advanced.todayCount + sData.adventure.todayCount;
                     historyMaxCorrect = Math.max(sData.contest.historyMaxCorrect, sData.contest_advanced.historyMaxCorrect);
                     greenDotsCount = sData.weekActiveDays;
@@ -918,42 +945,34 @@
                 document.getElementById('lobby-today-basic').innerText = `📘 今日基礎答對：${todayBasicCorrect} 題`;
                 document.getElementById('lobby-today-advance').innerText = `📗 今日進階答對：${todayAdvanceCorrect} 題`;
                 
-                // 1. 初出茅廬
+                // 徽章狀態更新
                 if (globalTotalCorrect >= 10) { document.getElementById('badge-novice').className = "badge-item unlocked"; document.getElementById('badge-progress-novice').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-novice').className = "badge-item"; document.getElementById('badge-progress-novice').innerText = `${globalTotalCorrect}/10`; }
 
-                // 2. 熟能生巧
                 const masterNameEl = document.getElementById('badge-name-master');
                 if (globalTotalCorrect >= 500) { document.getElementById('badge-master').className = "badge-item unlocked"; masterNameEl.innerText = "熟能生巧 III"; document.getElementById('badge-progress-master').innerText = "已達頂級! 🎉"; }
                 else if (globalTotalCorrect >= 300) { document.getElementById('badge-master').className = "badge-item unlocked"; masterNameEl.innerText = "熟能生巧 III"; document.getElementById('badge-progress-master').innerText = `${globalTotalCorrect}/500`; }
                 else if (globalTotalCorrect >= 100) { document.getElementById('badge-master').className = "badge-item unlocked"; masterNameEl.innerText = "熟能生巧 II"; document.getElementById('badge-progress-master').innerText = `${globalTotalCorrect}/300`; }
                 else { document.getElementById('badge-master').className = "badge-item"; masterNameEl.innerText = "熟能生巧 I"; document.getElementById('badge-progress-master').innerText = `${globalTotalCorrect}/100`; }
 
-                // 3. 持之以恆
                 if (greenDotsCount >= 6) { document.getElementById('badge-pioneer').className = "badge-item unlocked"; document.getElementById('badge-progress-pioneer').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-pioneer').className = "badge-item"; document.getElementById('badge-progress-pioneer').innerText = `${greenDotsCount}/6 天`; }
 
-                // 4. 突破極限
                 if (historyMaxCorrect >= 32) { document.getElementById('badge-limit').className = "badge-item unlocked"; document.getElementById('badge-progress-limit').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-limit').className = "badge-item"; document.getElementById('badge-progress-limit').innerText = `${historyMaxCorrect}/32`; }
 
-                // 5. 登峰造極
                 if (hasHistoryPerfect) { document.getElementById('badge-perfect').className = "badge-item unlocked"; document.getElementById('badge-progress-perfect').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-perfect').className = "badge-item"; document.getElementById('badge-progress-perfect').innerText = "未達成"; }
 
-                // 6. 閃電快手
                 if (historyMaxCorrect >= 20) { document.getElementById('badge-speed').className = "badge-item unlocked"; document.getElementById('badge-progress-speed').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-speed').className = "badge-item"; document.getElementById('badge-progress-speed').innerText = `${historyMaxCorrect}/20`; }
 
-                // 7. 基礎奠基
                 if (maxSingleDayBasic >= 200) { document.getElementById('badge-basic').className = "badge-item unlocked"; document.getElementById('badge-progress-basic').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-basic').className = "badge-item"; document.getElementById('badge-progress-basic').innerText = `${maxSingleDayBasic}/200`; }
 
-                // 8. 勇於挑戰
                 if (maxSingleDayAdvance >= 50) { document.getElementById('badge-advance').className = "badge-item unlocked"; document.getElementById('badge-progress-advance').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-advance').className = "badge-item"; document.getElementById('badge-progress-advance').innerText = `${maxSingleDayAdvance}/50`; }
 
-                // 9. 精準射手
                 if (hasSniper) { document.getElementById('badge-sniper').className = "badge-item unlocked"; document.getElementById('badge-progress-sniper').innerText = "已達成! 🎉"; }
                 else { document.getElementById('badge-sniper').className = "badge-item"; document.getElementById('badge-progress-sniper').innerText = "未達成"; }
             }
@@ -978,6 +997,7 @@
             
             if (displayList.length === 0) { tbody.innerHTML = `<tr><td colspan="${filterType === 'week' ? 4 : 5}">目前尚無相關紀錄</td></tr>`; return; }
 
+            // 問題 1 修正重點：繪製近 7 天綠點明細 Tooltip
             displayList.slice(0, filterType === 'history' ? 500 : 100).forEach((record, index) => {
                 let displayName = record.name;
                 let centerTdContent = '', scoreText = '', rateTdHtml = ''; 
@@ -988,9 +1008,15 @@
                 if (filterType === 'week') {
                     let dotsHtml = '<div class="dot-container">';
                     past7Days.forEach(d => {
-                        let score = record.dayRecords[d].correct;
-                        if (score > 0) dotsHtml += `<span class="dot active" data-tip="${d.substring(d.indexOf('/') + 1)}: 答對 ${score} 題"></span>`;
-                        else dotsHtml += `<span class="dot" data-tip="${d.substring(d.indexOf('/') + 1)}: 未練習"></span>`;
+                        let dayRec = record.dayRecords[d];
+                        let score = dayRec.correct;
+                        let monthDay = d.substring(d.indexOf('/') + 1);
+                        if (score > 0) {
+                            let detailMsg = `${monthDay}: 答對 ${score} 題\n----------------\n📘基礎: ${dayRec.basic.correct} 題\n🟣進階: ${dayRec.advanced.correct} 題\n⏱️挑戰: ${dayRec.contest.correct} 題\n🔥進階挑戰: ${dayRec.contest_advanced.correct} 題\n🐍冒險: ${dayRec.adventure.correct} 題`;
+                            dotsHtml += `<span class="dot active" data-tip="${detailMsg}"></span>`;
+                        } else {
+                            dotsHtml += `<span class="dot" data-tip="${monthDay}: 今日未練習"></span>`;
+                        }
                     });
                     centerTdContent = dotsHtml + `</div> <span style="font-size:11px;color:#7f8c8d;">(${record.weekActiveDays}天)</span>`;
                     scoreText = `${record.weekTotalCorrect} 題`;
