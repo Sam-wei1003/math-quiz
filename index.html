@@ -766,7 +766,7 @@
         foods.forEach(f => {
             let x = f.x * GRID + 1, y = f.y * GRID + 1, size = GRID - 2;
             ctx.fillStyle = '#fbc531'; ctx.fillRect(x, y, size, size);
-            ctx.fillStyle = '#111'; ctx.font = 'bold 12px sans-serif';
+            ctx.fillStyle = '#111'; ctx.font = `bold ${Math.floor(GRID * 0.6)}px sans-serif`; // 當 GRID=30 時，字體會自動變為 18px;
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(f.value, (f.x + 0.5) * GRID, (f.y + 0.5) * GRID);
         });
