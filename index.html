@@ -45,7 +45,7 @@
         .badge-item::after { content: attr(data-tip); position: absolute; bottom: 115%; left: 50%; transform: translateX(-50%); background-color: rgba(44, 62, 80, 0.95); color: white; padding: 8px 12px; font-size: 12px; line-height: 1.4; border-radius: 6px; white-space: pre-wrap; width: max-content; max-width: 200px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.25); opacity: 0; pointer-events: none; transition: opacity 0.15s; z-index: 99; }
         .badge-item:hover::after { opacity: 1; }
 
-        /* 模式選擇分區 UI (問題 2 優化) */
+        /* 模式選擇分區 UI */
         .mode-selection-container { display: flex; flex-direction: column; gap: 15px; margin: 20px 0; }
         .mode-group { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 10px; padding: 12px; text-align: left; }
         .mode-group-title { font-size: 15px; font-weight: bold; color: #34495e; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
@@ -69,7 +69,7 @@
         .wrong { color: #c0392b; }
         .hint { font-size: 14px; color: #7f8c8d; margin-top: 10px; }
 
-        /* 貪食蛇冒險模式與手把 UI (問題 3 優化) */
+        /* 貪食蛇冒險模式與手把 UI */
         #snake-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 10px; background: #2c3e50; border-radius: 8px; color: white; }
         #snake-qbox { font-size: 24px; font-weight: bold; color: #fbc531; }
         #snake-score-display { font-size: 18px; font-weight: bold; color: #2ecc71; text-align: left; }
@@ -82,7 +82,7 @@
         .d-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #1a252f; background: #e67e22; }
         .d-pad-empty { background: transparent; }
 
-        /* 排行榜與明細樣式 (問題 1 優化) */
+        /* 排行榜與明細樣式 */
         .leaderboard { margin-top: 25px; text-align: left; background-color: #fcf3cf; padding: 15px; border-radius: 8px; border: 2px dashed #f1c40f; }
         .tab-container { display: flex; justify-content: center; margin-bottom: 8px; gap: 5px; }
         .sub-tab-container { display: flex; justify-content: center; margin-bottom: 12px; gap: 5px; }
@@ -110,18 +110,16 @@
 <div class="container">
     <!-- 階段一：純登入 -->
     <div id="login-stage">
-        <h1>正負數加減法練習</h1>
-        <h2 style="margin-bottom: 25px;">請輸入名字以進入修練場：</h2>
+        <h1>正負數運算世界</h1>
+        <h2 style="margin-bottom: 25px;">請輸入名字以進入世界：</h2>
         <input type="text" id="username" placeholder="請輸入你的名字" autofocus autocomplete="off">
         <br>
-        <button onclick="handleLogin()" class="btn-login" style="margin-bottom: 30px;">進入修練場 🚀</button>
+        <button onclick="handleLogin()" class="btn-login" style="margin-bottom: 30px;">進入世界 🚀</button>
 
         <div style="background-color: #ebf5fb; border-left: 5px solid #3498db; border-radius: 8px; padding: 15px; text-align: left; width: 90%; margin: 0 auto; box-sizing: border-box;">
             <h3 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; display: flex; align-items: center; gap: 5px;">🛠️ 最近更新項目</h3>
             <ul style="margin: 0; padding-left: 20px; color: #566573; font-size: 14px; line-height: 1.6; font-weight: bold;">
-                <li style="color:#8e44ad;">優化模式選擇 UI 拆分為三大主題專區</li>
-                <li style="color:#27ae60;">修復一週勤奮榜明細足跡提示功能</li>
-                <li>貪食蛇冒險模式升級加大版手機實體感按鍵</li>
+                <li style="color:#8e44ad;">新增貪食蛇冒險模式</li>                
             </ul>
         </div>
     </div>
@@ -151,20 +149,20 @@
             </div>
         </div>
 
-        <!-- 3 個獨立區塊模式選擇 (問題 2 修正) -->
+        <!-- 3 個獨立區塊模式選擇 -->
         <div class="mode-selection-container">
             <!-- 區塊 1：練習模式區塊 -->
             <div class="mode-group">
-                <div class="mode-group-title">📖 1. 練習模式 (自主建構基礎)</div>
+                <div class="mode-group-title">📖 1. 練習模式</div>
                 <div class="mode-group-btns">
                     <button onclick="startGame('basic')" class="mode-card card-basic">🟢 基礎練習 (不限時 / 2個數 / 含絕對值)</button>
-                    <button onclick="startGame('advanced')" class="mode-card card-advance">🟣 進階練習 (不限時 / 3個數綜合算)</button>
+                    <button onclick="startGame('advanced')" class="mode-card card-advance">🟣 進階練習 (不限時 / 3個數加減)</button>
                 </div>
             </div>
 
             <!-- 區塊 2：競速模式區塊 -->
             <div class="mode-group">
-                <div class="mode-group-title">⏱️ 2. 競速模式 (1分鐘限時極限挑戰)</div>
+                <div class="mode-group-title">⏱️ 2. 競速模式</div>
                 <div class="mode-group-btns">
                     <button onclick="startGame('contest')" class="mode-card card-contest">⚡ 1分鐘限時挑戰賽 (基礎加減)</button>
                     <button onclick="startGame('contest_advanced')" class="mode-card card-contest-adv">🔥 1分鐘進階挑戰賽 (含乘除及絕對值)</button>
@@ -173,9 +171,9 @@
 
             <!-- 區塊 3：冒險模式區塊 -->
             <div class="mode-group">
-                <div class="mode-group-title">🎮 3. 冒險模式 (趣味遊戲挑戰)</div>
+                <div class="mode-group-title">🎮 3. 冒險模式</div>
                 <div class="mode-group-btns">
-                    <button onclick="startGame('adventure')" class="mode-card card-adventure">🐍 貪食蛇生存戰 (運算吃答冒險)</button>
+                    <button onclick="startGame('adventure')" class="mode-card card-adventure">🐍 貪食蛇生存戰</button>
                 </div>
             </div>
         </div>
@@ -240,7 +238,7 @@
         <button onclick="exitGame()" class="btn-nav" style="margin-top:15px;">返回大廳</button>
     </div>
 
-    <!-- 階段 3.5：貪食蛇冒險模式區 (問題 3 按鈕加大優化) -->
+    <!-- 階段 3.5：貪食蛇冒險模式區 -->
     <div id="snake-stage" class="hidden">
         <div id="snake-header">
             <div id="snake-score-display">
@@ -835,7 +833,7 @@
         return dates;
     }
 
-    // 問題 1 修正：還原一週勤奮榜詳細明細與綠點數據渲染
+    // 載入與繪製一週勤奮榜詳細明細與綠點數據
     function loadLeaderboardData(elementId, filterType, subMode) {
         if (!database) return;
         database.ref('contest_records').once('value', (snapshot) => {
@@ -997,7 +995,7 @@
             
             if (displayList.length === 0) { tbody.innerHTML = `<tr><td colspan="${filterType === 'week' ? 4 : 5}">目前尚無相關紀錄</td></tr>`; return; }
 
-            // 問題 1 修正重點：繪製近 7 天綠點明細 Tooltip
+            // 繪製近 7 天綠點明細 Tooltip
             displayList.slice(0, filterType === 'history' ? 500 : 100).forEach((record, index) => {
                 let displayName = record.name;
                 let centerTdContent = '', scoreText = '', rateTdHtml = ''; 
