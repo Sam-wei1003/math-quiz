@@ -650,65 +650,102 @@
         snakeInterval = setInterval(snakeGameLoop, snakeBaseSpeed);
     }
 
-    function generateSnakeQuestion() {
-        let newLevel = 1;
-        if (currentData.correct >= 50) newLevel = 5;
-        else if (currentData.correct >= 30) newLevel = 4;
-        else if (currentData.correct >= 20) newLevel = 3;
-        else if (currentData.correct >= 10) newLevel = 2;
+   function generateSnakeQuestion() {
+    // 1. 計算當前等級
+    let newLevel = 1;
+    if (currentData.correct >= 50) newLevel = 5;
+    else if (currentData.correct >= 30) newLevel = 4;
+    else if (currentData.correct >= 20) newLevel = 3;
+    else if (currentData.correct >= 10) newLevel = 2;
 
-        if (newLevel !== currentSnakeLevel) {
-            currentSnakeLevel = newLevel;
-            if (currentSnakeLevel === 4) snakeBaseSpeed = 100;
-            else if (currentSnakeLevel === 5) snakeBaseSpeed = 65;
-            
-            clearInterval(snakeInterval);
-            snakeInterval = setInterval(snakeGameLoop, snakeBaseSpeed);
-        }
-
-        let qType = currentSnakeLevel;
-        if (currentSnakeLevel >= 4) qType = Math.floor(Math.random() * 3) + 1;
+    // 2. 切換等級並更新速度 (補齊 Level 1 ~ 3 速度)
+    if (newLevel !== currentSnakeLevel) {
+        currentSnakeLevel = newLevel;
         
-        let qText = '', ans = 0;
-        if (qType === 1) { 
-            let a, b, isAdd, valid = false;
-            while (!valid) {
-                a = getRandomNumWithoutZero(); b = getRandomNumWithoutZero(); isAdd = Math.random() < 0.5;
-                if (isAdd) { if (!(a > 0 && b > 0)) valid = true; } 
-                else { if (!(a > 0 && b > 0 && (a - b >= 0))) valid = true; }
-            }
-            qText = `${formatNum(a)} ${isAdd ? '+' : '-'} ${formatNum(b)} = ?`;
-            ans = isAdd ? (a + b) : (a - b);
-        } else if (qType === 2) { 
-            let a = getRandomNumWithoutZero(), b = getRandomNumWithoutZero();
-            if (Math.random() < 0.5) { qText = `${formatNum(a)} × ${formatNum(b)} = ?`; ans = a * b; }
-            else { let c = a * b; qText = `${formatNum(c)} ÷ ${formatNum(a)} = ?`; ans = b; }
-        } else if (qType === 3) { 
-            let a = getRandomNumWithoutZero(), b = getRandomNumWithoutZero();
-            let absA = Math.abs(a), absB = Math.abs(b);
-            switch(Math.floor(Math.random() * 4) + 1) {
-                case 1: qText = `| ${a} | + | ${b} | = ?`; ans = absA + absB; break;
-                case 2: qText = `| ${a} | - | ${b} | = ?`; ans = absA - absB; break;
-                case 3: qText = `-| ${a} | + | ${b} | = ?`; ans = -absA + absB; break;
-                case 4: qText = `-| ${a} | - | ${b} | = ?`; ans = -absA - absB; break;
-            }
+        switch (currentSnakeLevel) {
+            case 1: snakeBaseSpeed = 200; break; // 慢速
+            case 2: snakeBaseSpeed = 160; break; // 中慢速
+            case 3: snakeBaseSpeed = 130; break; // 中速
+            case 4: snakeBaseSpeed = 100; break; // 快速
+            case 5: snakeBaseSpeed = 65;  break; // 極速
         }
 
-        currentAnswer = ans;
-        document.getElementById('snake-qbox').innerText = qText;
-
-        let opts = new Set([-ans, ans + 2, ans - 2, Math.abs(ans)]);
-        opts.delete(ans);
-        let wrongList = Array.from(opts).sort(() => Math.random() - 0.5).slice(0, 3);
-        let choices = [
-            { value: ans, isCorrect: true },
-            { value: wrongList[0] ?? ans+1, isCorrect: false },
-            { value: wrongList[1] ?? ans-1, isCorrect: false },
-            { value: wrongList[2] ?? ans+3, isCorrect: false }
-        ].sort(() => Math.random() - 0.5);
-
-        spawnSnakeFoods(choices);
+        clearInterval(snakeInterval);
+        snakeInterval = setInterval(snakeGameLoop, snakeBaseSpeed);
     }
+
+    // 3. 決定題目類型 ( Level 1~3 為對應題型，Level 4~5 為全題型綜合隨機)
+    let maxType = Math.min(currentSnakeLevel, 3); // 目前最多到型態 3 (絕對值)
+    let qType = (currentSnakeLevel >= 4) ? (Math.floor(Math.random() * maxType) + 1) : currentSnakeLevel;
+
+    // 4. 生成題目與正確答案
+    let qText = '', ans = 0;
+    
+    // 型態 1：正負數加減法
+    if (qType === 1) { 
+        let a, b, isAdd, valid = false;
+        while (!valid) {
+            a = getRandomNumWithoutZero(); 
+            b = getRandomNumWithoutZero(); 
+            isAdd = Math.random() < 0.5;
+            // 確保題目包含負數計算，避免退化成國小純正數加減
+            if (isAdd) { if (!(a > 0 && b > 0)) valid = true; } 
+            else { if (!(a > 0 && b > 0 && (a - b >= 0))) valid = true; }
+        }
+        qText = `${formatNum(a)} ${isAdd ? '+' : '-'} ${formatNum(b)} = ?`;
+        ans = isAdd ? (a + b) : (a - b);
+    } 
+    // 型態 2：正負數乘除法
+    else if (qType === 2) { 
+        let a = getRandomNumWithoutZero(), b = getRandomNumWithoutZero();
+        if (Math.random() < 0.5) { 
+            qText = `${formatNum(a)} × ${formatNum(b)} = ?`; 
+            ans = a * b; 
+        } else { 
+            let c = a * b; 
+            qText = `${formatNum(c)} ÷ ${formatNum(a)} = ?`; 
+            ans = b; 
+        }
+    } 
+    // 型態 3：絕對值運算
+    else if (qType === 3) { 
+        let a = getRandomNumWithoutZero(), b = getRandomNumWithoutZero();
+        let absA = Math.abs(a), absB = Math.abs(b);
+        switch (Math.floor(Math.random() * 4) + 1) {
+            case 1: qText = `| ${a} | + | ${b} | = ?`; ans = absA + absB; break;
+            case 2: qText = `| ${a} | - | ${b} | = ?`; ans = absA - absB; break;
+            case 3: qText = `-| ${a} | + | ${b} | = ?`; ans = -absA + absB; break;
+            case 4: qText = `-| ${a} | - | ${b} | = ?`; ans = -absA - absB; break;
+        }
+    }
+
+    currentAnswer = ans;
+    document.getElementById('snake-qbox').innerText = qText;
+
+    // 5. 產生 3 個不與正解重複的獨特錯誤答案
+    let wrongOptions = new Set();
+    let candidateOffsets = [-ans, ans + 2, ans - 2, Math.abs(ans), ans + 1, ans - 1, ans + 3, ans - 3, -ans + 1];
+
+    for (let candidate of candidateOffsets) {
+        if (candidate !== ans && !isNaN(candidate)) {
+            wrongOptions.add(candidate);
+        }
+        if (wrongOptions.size >= 3) break;
+    }
+
+    let wrongList = Array.from(wrongOptions);
+
+    // 6. 組合 4 個選項並洗牌
+    let choices = [
+        { value: ans, isCorrect: true },
+        { value: wrongList[0], isCorrect: false },
+        { value: wrongList[1], isCorrect: false },
+        { value: wrongList[2], isCorrect: false }
+    ].sort(() => Math.random() - 0.5);
+
+    // 7. 將選項投放至畫面上
+    spawnSnakeFoods(choices);
+}
 
     function spawnSnakeFoods(choices) {
         foods = [];
